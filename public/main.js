@@ -84,11 +84,16 @@ $(function() {
       $typingMessages.remove();
     }
 
+    var body = data.message;
+    if (options.type === 'img') {
+      body = '<img class="chatbot-img" src="'+data.message+'">';
+    }
+
     var $usernameDiv = $('<span class="username"/>')
       .text(data.username)
       .css('color', getUsernameColor(data.username));
     var $messageBodyDiv = $('<span class="messageBody">')
-      .text(data.message);
+      .html(body);
 
     var typingClass = data.typing ? 'typing' : '';
     var $messageDiv = $('<li class="message"/>')
@@ -239,6 +244,11 @@ $(function() {
   // Whenever the server emits 'new message', update the chat body
   socket.on('new message', function (data) {
     addChatMessage(data);
+  });
+
+  // Whenever the server emits 'chatbot message', update the chat body
+  socket.on('chatbot message', function(data) {
+    addChatMessage(data, data.options);
   });
 
   // Whenever the server emits 'user joined', log it in the chat body

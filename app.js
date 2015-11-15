@@ -17,6 +17,7 @@ app.use(express.static(__dirname + '/public'));
 // usernames which are currently connected to the chat
 var usernames = {};
 var numUsers = 0;
+var Bot = require('./bot')
 
 io.on('connection', function (socket) {
   var addedUser = false;
@@ -30,7 +31,15 @@ io.on('connection', function (socket) {
     });
 
     // check message was for bot
-    if data.
+    if (data.match(/^chatbot/i)) {
+      Bot.answer(data, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
+        io.sockets.emit('chatbot message', {
+          username: 'chatbot',
+          message: answer.message,
+          options: answer
+        });
+      });
+    }
   });
 
   // when the client emits 'add user', this listens and executes
