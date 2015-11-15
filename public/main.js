@@ -26,20 +26,6 @@ $(function() {
   //set up audio/video file sending - send to server
   var socket = io();
 
-  var files = {
-    audio: {
-      name: fileName + '.wav',
-      type: 'audio/wav',
-      dataURL:  dataURL.video
-    }
-    // video: {
-    //   name: fileName + '.webm',
-    //   type: 'video/webm',
-    //   dataURL: dataURL.video
-    // }
-  };
-  socketio.emit('media message', files);
-
   function addParticipantsMessage (data) {
     var message = '';
     if (data.numUsers === 1) {

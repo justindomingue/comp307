@@ -32,22 +32,6 @@ io.on('connection', function (socket) {
     });
   });
 
-  //when client emits 'media message', this listens and executes
-  socket.on('media message', function(data) {
-
-      // socket.emit('ffmpeg-output', 0);
-
-      // writeToDisk(data.audio.dataURL, data.audio.name);
-
-      // if (data.video) {
-      //         writeToDisk(data.video.dataURL, data.video.name);
-      //         merge(socket, fileName);
-      // }
-
-      //just audio
-      socket.broadcast.emit('media-message', data.audio);
-  });
-
   // when the client emits 'add user', this listens and executes
   socket.on('add user', function (username) {
     // we store the username in the socket session for this client
