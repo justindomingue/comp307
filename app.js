@@ -3,11 +3,13 @@ var express = require('express');
 var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
+var  ffmpeg = require('ffmpeg-output');
 var port = process.env.PORT || 3000;
 
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
 });
+
 
 // Routing
 app.use(express.static(__dirname + '/public'));
@@ -28,6 +30,22 @@ io.on('connection', function (socket) {
       username: socket.username,
       message: data
     });
+  });
+
+  //when client emits 'media message', this listens and executes
+  socket.on('media message', function(data) {
+
+      // socket.emit('ffmpeg-output', 0);
+
+      // writeToDisk(data.audio.dataURL, data.audio.name);
+
+      // if (data.video) {
+      //         writeToDisk(data.video.dataURL, data.video.name);
+      //         merge(socket, fileName);
+      // }
+
+      //just audio
+      socket.broadcast.emit('media-message', data.audio);
   });
 
   // when the client emits 'add user', this listens and executes
@@ -77,3 +95,51 @@ io.on('connection', function (socket) {
     }
   });
 });
+
+// function writeToDisk(dataURL, fileName) {
+//     var fileExtension = fileName.split('.').pop(),
+//         fileRootNameWithBase = './uploads/' + fileName,
+//         filePath = fileRootNameWithBase,
+//         fileID = 2,
+//         fileBuffer;
+
+//     // @todo return the new filename to client
+//     while (fs.existsSync(filePath)) {
+//         filePath = fileRootNameWithBase + '(' + fileID + ').' + fileExtension;
+//         fileID += 1;
+//     }
+
+//     dataURL = dataURL.split(',').pop();
+//     fileBuffer = new Buffer(dataURL, 'base64');
+//     fs.writeFileSync(filePath, fileBuffer);
+
+//     console.log('filePath', filePath);
+// }
+
+// function merge(socket, fileName) {
+//     var FFmpeg = require('fluent-ffmpeg');
+
+//     var audioFile = path.join(__dirname, 'uploads', fileName + '.wav'),
+//         videoFile = path.join(__dirname, 'uploads', fileName + '.webm'),
+//         mergedFile = path.join(__dirname, 'uploads', fileName + '-merged.webm');
+
+//     new FFmpeg({
+//             source: videoFile
+//         })
+//         .addInput(audioFile)
+//         .on('error', function (err) {
+//             socket.emit('ffmpeg-error', 'ffmpeg : An error occurred: ' + err.message);
+//         })
+//         .on('progress', function (progress) {
+//             socket.emit('ffmpeg-output', Math.round(progress.percent));
+//         })
+//         .on('end', function () {
+//             socket.emit('merged', fileName + '-merged.webm');
+//             console.log('Merging finished !');
+
+//             // removing audio/video files
+//             fs.unlink(audioFile);
+//             fs.unlink(videoFile);
+//         })
+//         .saveToFile(mergedFile);
+// }
