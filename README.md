@@ -6,7 +6,7 @@
 ```
 cd comp307
 $ npm install
-$ node .
+$ node app.js
 ```
 
 And point your browser to `http://localhost:3000`. Optionally, specify
