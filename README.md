@@ -24,8 +24,8 @@ on website load.
 - [x]  A notification is sent to all users when a user joins or leaves
 the chatroom.
 - [x] 'is typing' message
-- [  ] Multiple rooms
-- [  ] Private messages
-- [  ] Unique usernames
-- [  ] Send audio messages
-- [  ] People joining see past 10 messages (chat history)
+- [ ] Multiple rooms
+- [ ] Private messages
+- [ ] Unique usernames
+- [ ] Send audio messages
+- [ ] People joining see past 10 messages (chat history)
