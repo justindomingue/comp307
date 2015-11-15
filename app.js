@@ -28,6 +28,9 @@ io.on('connection', function (socket) {
       username: socket.username,
       message: data
     });
+
+    // check message was for bot
+    if data.
   });
 
   // when the client emits 'add user', this listens and executes

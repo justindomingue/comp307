@@ -30,3 +30,4 @@ the chatroom.
 - [ ] Send audio messages
 - [ ] People joining see past 10 messages (chat history)
 - [ ] Chat bot
+- [ ] Encryption
