@@ -18,8 +18,14 @@ a port by supplying the `PORT` env variable.
 
 ## Features
 
-- Multiple users can join a chat room by each entering a unique username
+- [x] Multiple users can join a chat room by each entering a unique username
 on website load.
-- Users can type chat messages to the chat room.
-- A notification is sent to all users when a user joins or leaves
+- [x] Users can type chat messages to the chat room.
+- [x]  A notification is sent to all users when a user joins or leaves
 the chatroom.
+- [x] 'is typing' message
+- [  ] Multiple rooms
+- [  ] Private messages
+- [  ] Unique usernames
+- [  ] Send audio messages
+- [  ] People joining see past 10 messages (chat history)
