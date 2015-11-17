@@ -127,6 +127,10 @@ ul {
   color: gray;
 }
 
+.message .messageBody img {
+  width: 300px;
+}
+
 .username {
   float: left;
   font-weight: 700;
