@@ -27,3 +27,4 @@ the chatroom.
 - [ ] People joining see past 10 messages (chat history)
 - [x] Chat bot
 - [ ] Encryption
+- [ ] Map
