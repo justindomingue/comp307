@@ -25,5 +25,5 @@ the chatroom.
 - [ ] Unique usernames
 - [ ] Send audio messages
 - [ ] People joining see past 10 messages (chat history)
-- [ ] Chat bot
+- [x] Chat bot
 - [ ] Encryption
