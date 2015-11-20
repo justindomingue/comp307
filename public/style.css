@@ -152,3 +152,52 @@ ul {
   right: 0;
   width: 100%;
 }
+
+/**
+ * TABS
+ *
+ * -------------------------------------------------------------------------------------------------
+ */
+
+.tabs .tab {
+  display: none;
+}
+
+.tabs UL.horizontal {
+	list-style: none outside none;
+	margin: 0;
+}
+
+.tabs UL.horizontal LI {
+	background: white;
+	border-bottom: 4px solid #E5E5E5;
+	margin: 0 10px 0 0;
+	display: inline-block;
+}
+
+.tabs UL.horizontal A {
+	color: #ccc;
+	display: block;
+	font-size: 18px;
+	font-weight: 300;
+	padding: 14px 24px;
+	text-decoration: none;
+}
+
+.tabs UL.horizontal LI:hover {
+	background: #a0cac0;
+	border-bottom: 4px solid #68a697;
+}
+
+.tabs UL.horizontal LI:hover A {
+	color: white;
+}
+
+.active {
+	background: #a0cac0 !important;
+	border-bottom: 4px solid #68a697 !important;
+}
+
+.active A {
+	color: white !important;
+}
