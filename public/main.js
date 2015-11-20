@@ -49,10 +49,11 @@ $(function () {
     var $div = $('<div class="tab" id="' + name + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
     $('.tabs').append($div);
     
+    $('.tabs').trigger('destroy');
     $('.tabs').tabslet();
+    $('.tabs').trigger('show', '#'+name);
   }
 
-  addTab('Room 2');
   $('.tabs').tabslet();
   active().show();
   
