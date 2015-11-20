@@ -1,0 +1,8 @@
+TODO
+- implement group adding functionality
+- ensure two users with the same username cannot exist
+
+
+
+Debugging tools
+ $(".messages").append('<li>Hello</li>');

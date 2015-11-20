@@ -1,12 +1,47 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Socket.IO Chat Example</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>jQuery UI Tabs - Simple manipulation</title>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/main.js"></script>
+  <!--<script src="/tab_functionality.js"></script>-->
+  <!--<style>
+  #dialog label, #dialog input { display:block; }
+  #dialog label { margin-top: 0.5em; }
+  #dialog input, #dialog textarea { width: 95%; }
+  #tabs { margin-top: 1em; }
+  #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+  #add_tab { cursor: pointer; }
+  </style>-->
 </head>
 <body>
-  <ul class="pages">
+ 
+	<div id="dialog" title="Start a room">
+	  <form>
+		<fieldset class="ui-helper-reset">
+		  <label for="tab_title">Room name</label>
+		  <input type="text" name="tab_title" id="tab_title" value="Tab Title" class="ui-widget-content ui-corner-all">
+		  <!-- Consider using the below as a way to add a "description for the room-->
+		  <!--<label for="tab_content">Description</label>
+		  <textarea name="tab_content" id="tab_content" class="ui-widget-content ui-corner-all">Tab content</textarea>-->
+		</fieldset>
+	  </form>
+	</div>
+	
+	<!-- TODO: use this as the dialog box in which user's can search for currently active rooms-->
+	<!--<div id="dialog" title="Find a room">
+	  <form>
+		<fieldset class="ui-helper-reset">
+		</fieldset>
+	  </form>
+	</div>-->
+	
+	
+  <!--<ul class="pages">
     <li class="chat page">
       <div class="chatArea">
         <ul class="messages"></ul>
@@ -19,10 +54,50 @@
         <input class="usernameInput" type="text" maxlength="14" />
       </div>
     </li>
-  </ul>
+  </ul>-->
+	
+	<ul class="pages">
+		<li class="chat page">
+		
+		  <button id="search_rooms">Find a room</button>
+		  <button id="add_tab">Start a room</button>
+	
+		  <!--<div>
+			<ul id="menuBar">
+			  <li><a id="searchRooms">Search Rooms</a></li>
+			  <li><a id="createRoom">Create Room</a></li>
+			</ul>
+		  </div>-->
+	  
+		  <div id="tabs">
+	  
+			<ul>
+			  <li name="Free-for-all"><a href="#Free-for-all">Free-for-all</a><span class="ui-icon ui-icon-close" role="presentation">Remove Tab</span></li>       
+			</ul>
+			
+			<div id="Free-for-all">
+		      <div class="chatArea">
+				  <ul class="messages"></ul>
+			  </div>
+	        </div>
 
-  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/main.js"></script>
+		
+		  <div>
+	  
+		  <input class="inputMessage" placeholder="Type here..."/>
+	  
+		</li>
+    
+		<li class="login page">
+	
+		  <div class="form">
+			<h3 class="title">What's your nickname?</h3>
+			<input class="usernameInput" type="text" maxlength="14" />
+		  </div>
+	  
+		</li>
+  </ul>
+ 
+ 
 </body>
 </html>
