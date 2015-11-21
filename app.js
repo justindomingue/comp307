@@ -14,78 +14,198 @@ app.use(express.static(__dirname + '/public'));
 
 // Chatroom
 
-// usernames which are currently connected to the chat
+// Initialize our dictionary of rooms with the global room "public"
+// Key = name of room
+// Value = object containing usernames and number of participants
+/*var rooms = {
+	'#public': {
+		numUsers: 0,
+		usernames: {}
+	}
+}*/
+
+var rooms = {};
+
+var publicRoom = new Room();
+
+rooms['#public'] = publicRoom;
+
+function Room() {
+  this.numUsers = 0;
+  this.usernames = {};
+}
+
+// Dictionary of users currently online
+// Key: username
+// Value: a dictionary of rooms the user is in
+// As an example, here is what usernames might look like:
+/*
+var usernames = {
+    keith: {
+        room1: "room1",
+        room2: "room2",
+        room3: "room3"
+    },
+    jane: {
+        room1: "room1"
+    }
+}
+*/
 var usernames = {};
 var numUsers = 0;
-var Bot = require('./bot')
 
 io.on('connection', function (socket) {
+  // Field to indicate whether a user corresponding to the given socket has been added
+  // This field will be set to true if the user logs in
   var addedUser = false;
+  
+  // Validates the user and logs them in
+  socket.on('validate username', function (data) {
+    // Check for the existence of the username in the usernames dictionary
+    // DEBUG: 
+    // console.log(usernames);
+    if (data in usernames) {
+      console.log("username " + data + " already taken");
+      socket.emit('invalid username', data);
+    } else {
+      // DEBUG: 
+      // console.log(usernames[data]);
+      console.log(data + " logged in");
+      socket.username = data;
+      usernames[data] = {};
+      numUsers++;
+      addedUser = true;
+      socket.emit('valid username', {
+        username: data,
+        usersOnline: numUsers
+      });
+    }
+  });
 
   // when the client emits 'new message', this listens and executes
   socket.on('new message', function (data) {
     // we tell the client to execute 'new message'
-    socket.broadcast.emit('new message', {
+    console.log(socket.username + " sent a message to " + data.room);
+    socket.to(data.room).emit('new message', {
       username: socket.username,
-      message: data
+      room: data.room,
+      message: data.message
     });
-
-    // check message was for bot
-    if (data.match(/^chatbot/i)) {
-      Bot.answer(data, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
-        io.sockets.emit('chatbot message', {
-          username: 'chatbot',
-          message: answer.message,
-          options: answer
-        });
-      });
-    }
   });
-
+	
   // when the client emits 'add user', this listens and executes
-  socket.on('add user', function (username) {
+  // handles new users added to the system by storing their username in the socket session,
+  // and emitting a welcome message to them
+  /*socket.on('add user', function (data) {
     // we store the username in the socket session for this client
-    socket.username = username;
-    // add the client's username to the global list
-    usernames[username] = username;
-    ++numUsers;
+    socket.username = data.username;
+    // add the client's username to the list of all active users
+    usernames[data.username] = {};
+    // increment the number of users in the room by one
+    numUsers++;
     addedUser = true;
+    // Emit a message back to the user to indicate that they are logged into the chat
+    // and to welcome them to the chat
     socket.emit('login', {
       numUsers: numUsers
     });
-    // echo globally (all clients) that a person has connected
-    socket.broadcast.emit('user joined', {
+  });*/
+  
+  socket.on('user joined', function (data) {
+    console.log(data.username + " joined " + data.room);
+        
+    // Check if the room already exists
+    if (!(data.room in rooms)) {
+	  // Add a new room to the dictionary of rooms
+	  rooms[data.room] = new Room();
+	}
+	
+	// Subscribe the socket to the room 
+    socket.join(data.room);
+    // Add the room to the list of rooms the user is a part of
+    usernames[data.username][data.room] = data.room;
+    // add the client's username to the list of participants in the given room
+    rooms[data.room].usernames[data.username] = data.username;
+    // increment the number of users in the room by one
+    rooms[data.room].numUsers++;
+    // DEBUG:
+    // console.log(rooms[data.room].numUsers);
+    // echo to all members of the chat that a person has connected
+    socket.emit('user joined', {
+      room: data.room,
       username: socket.username,
-      numUsers: numUsers
+      numUsers: rooms[data.room].numUsers
+    });
+    socket.to(data.room).emit('user joined', {
+      room: data.room,
+      username: socket.username,
+      numUsers: rooms[data.room].numUsers
     });
   });
 
   // when the client emits 'typing', we broadcast it to others
-  socket.on('typing', function () {
-    socket.broadcast.emit('typing', {
-      username: socket.username
+  socket.on('typing', function (data) {
+    //console.log(socket.username + " typing to " + data.room);
+    socket.to(data.room).emit('typing', {
+      username: socket.username,
+      room: data.room
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
-  socket.on('stop typing', function () {
-    socket.broadcast.emit('stop typing', {
-      username: socket.username
+  socket.on('stop typing', function (data) {
+    //console.log(socket.username + " stopped typing to " + data.room);
+    socket.to(data.room).emit('stop typing', {
+      username: socket.username,
+      room: data.room
     });
   });
 
-  // when the user disconnects.. perform this
+  // when the user closes the webpage, disconnect them from all groups they were in
   socket.on('disconnect', function () {
-    // remove the username from global usernames list
+    // remove the username from all the rooms the user
+    // was a part of and from the list of global usernames
     if (addedUser) {
+      // Get the dictionary of rooms the user was a part of
+      var usersRooms = usernames[socket.username];
+      // Iterate through the rooms, removing the user from each one, and echoing to other
+      // members of each room that the user has left
+      for (var room in usersRooms) {
+        removeUserFromRoom(usersRooms[room]);
+        console.log(socket.username + " left " + room);
+      }
+      // Remove the user from the global list of usernames
       delete usernames[socket.username];
-      --numUsers;
-
-      // echo globally that this client has left
-      socket.broadcast.emit('user left', {
-        username: socket.username,
-        numUsers: numUsers
-      });
+      numUsers--;
     }
   });
+  
+  // when the user closes an individual tab, disconnect them from that group
+  socket.on('disconnect from group', function(data) {
+    if (addedUser) {
+      removeUserFromRoom(data.room);
+      console.log(socket.username + " left " + data.room);
+      delete usernames[socket.username][data.room];
+    }
+  });
+  
+  // Helper function which removes the user from the given room and notifies other participants
+  // of the room that a user has left
+  function removeUserFromRoom(room) {
+    delete rooms[room].usernames[socket.username];
+    rooms[room].numUsers--;
+	if (rooms[room].numUsers === 0) {
+	  // Remove the room entirely
+	  delete rooms[room];
+	} else {
+	  // Emit to the remaining users that the user has left
+	  socket.to(room).emit('user left', {
+		username: socket.username,
+		room: room,
+		numUsers: rooms[room].numUsers
+	  });
+	}
+	// Have the socket leave the room
+    socket.leave(room);
+  }
 });

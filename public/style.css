@@ -81,7 +81,7 @@ ul {
   letter-spacing: 3px;
 }
 
-.login.page .title, .login.page .usernameInput {
+.login.page .title, .login.page .usernameInput, .login.page .login-msg {
   color: #fff;
   font-weight: 100;
 }

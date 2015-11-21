@@ -20,9 +20,9 @@ on website load.
 - [x]  A notification is sent to all users when a user joins or leaves
 the chatroom.
 - [x] 'is typing' message
-- [ ] Multiple rooms
+- [x] Multiple rooms
 - [ ] Private messages
-- [ ] Unique usernames
+- [x] Unique usernames
 - [ ] Send audio messages
 - [ ] People joining see past 10 messages (chat history)
 - [x] Chat bot
