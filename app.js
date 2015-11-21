@@ -17,13 +17,6 @@ app.use(express.static(__dirname + '/public'));
 // Initialize our dictionary of rooms with the global room "public"
 // Key = name of room
 // Value = object containing usernames and number of participants
-/*var rooms = {
-	'#public': {
-		numUsers: 0,
-		usernames: {}
-	}
-}*/
-
 var rooms = {};
 
 var publicRoom = new Room();
@@ -92,24 +85,6 @@ io.on('connection', function (socket) {
       message: data.message
     });
   });
-	
-  // when the client emits 'add user', this listens and executes
-  // handles new users added to the system by storing their username in the socket session,
-  // and emitting a welcome message to them
-  /*socket.on('add user', function (data) {
-    // we store the username in the socket session for this client
-    socket.username = data.username;
-    // add the client's username to the list of all active users
-    usernames[data.username] = {};
-    // increment the number of users in the room by one
-    numUsers++;
-    addedUser = true;
-    // Emit a message back to the user to indicate that they are logged into the chat
-    // and to welcome them to the chat
-    socket.emit('login', {
-      numUsers: numUsers
-    });
-  });*/
   
   socket.on('user joined', function (data) {
     console.log(data.username + " joined " + data.room);
