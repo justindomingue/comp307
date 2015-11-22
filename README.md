@@ -6,7 +6,7 @@
 ```
 cd comp307
 $ npm install
-$ node .
+$ node app.js
 ```
 
 And point your browser to `http://localhost:3000`. Optionally, specify
@@ -20,9 +20,11 @@ on website load.
 - [x]  A notification is sent to all users when a user joins or leaves
 the chatroom.
 - [x] 'is typing' message
-- [ ] Multiple rooms
+- [x] Multiple rooms
 - [ ] Private messages
-- [ ] Unique usernames
+- [x] Unique usernames
 - [ ] Send audio messages
 - [ ] People joining see past 10 messages (chat history)
-- [ ] Chat bot
+- [x] Chat bot
+- [ ] Encryption
+- [ ] Map
