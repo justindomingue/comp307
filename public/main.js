@@ -49,6 +49,7 @@ $(function() {
 
       // Tell the server your username
       socket.emit('add user', username);
+      socket.emit('get history');
     }
   }
 
@@ -189,6 +190,12 @@ $(function() {
     return COLORS[index];
   }
 
+  function addHistory (history) {
+      for (i = 0; i < history.length; i++) {
+        addChatMessage(history[i]);
+      }
+  }
+
   // Keyboard events
 
   $window.keydown(function (event) {
@@ -235,6 +242,7 @@ $(function() {
       prepend: true
     });
     addParticipantsMessage(data);
+    getChatHistory();
   });
 
   // Whenever the server emits 'new message', update the chat body
@@ -264,4 +272,10 @@ $(function() {
   socket.on('stop typing', function (data) {
     removeChatTyping(data);
   });
+
+  socket.on('receive history', function(data) {
+    console.log(data);
+      addHistory(data);
+  });
+
 });
