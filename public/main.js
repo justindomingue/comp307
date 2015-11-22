@@ -129,7 +129,7 @@ $(function () {
     if (message) {
       $inputMessage.val('');
       
-      match = /^\/join (\w*)/.exec(message)
+      match = /^\/join ([\w|\s]*)/.exec(message)
       if (match) {
         // Check if the user is already a member of the room
         if ('#'+match[1] in usersRooms) {

@@ -12,6 +12,8 @@ server.listen(port, function () {
 // Routing
 app.use(express.static(__dirname + '/public'));
 
+var Bot = require('./bot');
+
 // Chatroom
 
 // Initialize our dictionary of rooms with the global room "public"
@@ -77,13 +79,26 @@ io.on('connection', function (socket) {
 
   // when the client emits 'new message', this listens and executes
   socket.on('new message', function (data) {
+    var message = data.message;
+    
     // we tell the client to execute 'new message'
     console.log(socket.username + " sent a message to " + data.room);
     socket.to(data.room).emit('new message', {
       username: socket.username,
       room: data.room,
-      message: data.message
+      message: message
     });
+    
+    // check message was for bot
+    if (message.match(/^chatbot/i)) {
+      Bot.answer(message, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
+        io.sockets.emit('chatbot message', {
+          username: 'chatbot',
+          message: answer.message,
+          options: answer
+        });
+      });
+    }
   });
   
   socket.on('user joined', function (data) {
