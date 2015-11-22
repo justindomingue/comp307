@@ -66,6 +66,13 @@ $(function () {
     // 3. Make a request to join the room
     sendJoinRequest('#'+name);
   }
+  
+  function removeTab(name) {
+    // Delete tab content
+    $('.tabs').trigger('next');
+    $(name).remove();
+    $('.tabs ul.horizontal li a[href='+name+']')[0].remove();
+  }
 
   $('.tabs').tabslet();
   active().show();
@@ -129,15 +136,18 @@ $(function () {
     if (message) {
       $inputMessage.val('');
       
-      match = /^\/join ([\w|\s]*)/.exec(message)
-      if (match) {
+      joinRegex = /^\/join ([\w|\s]*)/.exec(message)
+      leaveRegex = /^\/leave ([\w|\s]*)/.exec(message)
+      if (joinRegex) {
         // Check if the user is already a member of the room
-        if ('#'+match[1] in usersRooms) {
+        if ('#'+joinRegex[1] in usersRooms) {
           // TODO: Switch to tab of room they entered
-          $('.tabs').trigger('show', '#'+match[1]);
+          $('.tabs').trigger('show', '#'+joinRegex[1]);
         } else {
-          addTab(match[1]);
+          addTab(joinRegex[1]);
         }
+      } else if (leaveRegex) {
+        removeTab('#'+leaveRegex[1]);
       } else if (connected) {
         addChatMessage({
           username: username,
