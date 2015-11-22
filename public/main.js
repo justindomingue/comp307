@@ -324,7 +324,7 @@ $(function () {
   	username = data.username;
   	connected = true;
   	// Display the welcome message  	
-    var message = "Welcome to Socket.IO Chat – ";
+    var message = "Welcome to the chat. ";
     log(message, activeID(), {
       prepend: true
     });

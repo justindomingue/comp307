@@ -92,10 +92,18 @@ io.on('connection', function (socket) {
     // check message was for bot
     if (message.match(/^chatbot/i)) {
       Bot.answer(message, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
-        io.sockets.emit('chatbot message', {
+        console.log("Chatbot replying.");
+        socket.to(data.room).emit('chatbot message', {
           username: 'chatbot',
+          room: data.room,
           message: answer.message,
-          options: answer
+          options: {type: answer.type }
+        });
+        socket.emit('chatbot message', {
+          username: 'chatbot',
+          room: data.room,
+          message: answer.message,
+          options: {type: answer.type}
         });
       });
     }
