@@ -33,33 +33,10 @@ rooms['#public'] = publicRoom;
 
 var usernames = {};
 var numUsers = 0;
-// setUsernames(usernames);
 
 function Room() {
   this.numUsers = 0;
   this.usernames = {};
-}
-
-//TO DO:  RATHER THAN GET/SET, implement  get/set for specific datatypes
-//REFERENCE: http://www.sitepoint.com/using-redis-node-js/
-function getRooms() {
-    return redisClient.get("rooms", function(err, reply) {
-      console.log(reply);
-    });
-}
-
-function setRooms(rooms) {
-    redisClient.set("rooms", rooms, redis.print);
-}
-
-function getUsernames() {
-  return redisClient.get("usernames", function(err, reply) {
-    console.log(reply);
-  });
-}
-
-function setUsernames(usernames) {
-    redisClient.set("usernames", usernames, redis.print);
 }
 
 function getHistory(roomID) {
@@ -69,7 +46,6 @@ function getHistory(roomID) {
 }
 
 function addHistory(data) {
-  //TO DO: add history to room - data.room
   var history = getHistory(data.room);
   if (history.length > 10) {
       redisClient.rpoplpush(data.room, data.message, redis.print);
@@ -206,8 +182,9 @@ io.on('connection', function (socket) {
  //gets the chat history
   socket.on('get history', function(data) {
       console.log("Get history called");
-      var dbHistory = getHistory(data);
-      socket.to(data).emit('receive history', {
+      var dbHistory = getHistory(data.room);
+      console.log("History for Room : " + data.room + " History: " + dbHistory);
+      socket.to(data.room).emit('receive history', {
         history: dbHistory
       });
   });

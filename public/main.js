@@ -123,7 +123,7 @@ $(function () {
     // If the username is valid
     if (requestedUsername) {
       // Tell the server your username
-      socket.emit('get history', activeID);
+      socket.emit('get history', activeID());
       socket.emit('validate username', requestedUsername);
     }
   }
@@ -348,7 +348,7 @@ $(function () {
 
     newUserMessage(data);
     socket.emit('user joined', {username: username, room: activeID()});
-    socket.emit()
+    socket.emit('get history', {room: activeID()});
   });
 
   // This runs if the requested username already exists
