@@ -7,6 +7,7 @@ var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
 var redisClient = redis.createClient(3001, "localhost", null);
+var history = {};
 
 redisClient.on("error", function(err) {
       console.log("Redis Error " + err);
@@ -39,17 +40,23 @@ function Room() {
   this.usernames = {};
 }
 
-function getHistory(roomID) {
-    redisClient.lrange(roomID, 10, function(err, reply) {
-    console.log(reply);
-    return reply;
+function getHistory(roomID, callback) {
+  console.log("RoomID get history: " + roomID);
+    redisClient.lrange(roomID, 0, -1,  function(err, reply) {
+      callback(err, reply);
   });
 }
 
-function addHistory(data) {
-  var history = getHistory(data.room);
+function queryHistory(err, reply) {
+  history = reply;
+}
+
+function addHistory(data, username) {
+  var input = username + ":" +  data.message;
+  var response = redisClient.rpush(data.room, input, redis.print);
+  console.log("RoomID addHistory: " + data.room);
+  getHistory(data.room, queryHistory);
   console.log("History on DB for room : " + data.room + " Data: " + history);
-  var response = redisClient.rpush(data.room, data.message, redis.print);
 }
 
 
@@ -82,7 +89,6 @@ io.on('connection', function (socket) {
     // console.log(usernames);
 
     console.log("retrieved usernames");
-    // usernames = getUsernames();
     if (data in usernames) {
       console.log("username " + data + " already taken");
       socket.emit('invalid username', data);
@@ -92,7 +98,6 @@ io.on('connection', function (socket) {
       console.log(data + " logged in");
       socket.username = data;
       usernames[data] = {};
-      // setUsernames(usernames);
       numUsers++;
       addedUser = true;
       socket.emit('valid username', {
@@ -105,11 +110,10 @@ io.on('connection', function (socket) {
   // when the client emits 'new message', this listens and executes
   socket.on('new message', function (data) {
     var message = data.message;
-    // usernames = getUsernames();
 
     // we tell the client to execute 'new message'
     ///also add to history
-    addHistory(data);
+    addHistory(data, socket.username);
     console.log(socket.username + " sent a message to " + data.room);
     socket.to(data.room).emit('new message', {
       username: socket.username,
@@ -140,8 +144,6 @@ io.on('connection', function (socket) {
 
   socket.on('user joined', function (data) {
     console.log(data.username + " joined " + data.room);
-    // rooms = getRooms();
-    // usernames = getUsernames();
 
     // Check if the room already exists
     if (!(data.room in rooms)) {
@@ -160,8 +162,6 @@ io.on('connection', function (socket) {
     rooms[data.room].usernames[data.username] = data.username;
     // increment the number of users in the room by one
     rooms[data.room].numUsers++;
-    // setUsernames(usernames);
-    // setRooms(rooms);
 
     // DEBUG:
     // console.log(rooms[data.room].numUsers);
@@ -180,11 +180,10 @@ io.on('connection', function (socket) {
 
  //gets the chat history
   socket.on('get history', function(data) {
-      console.log("Get history called");
-      var dbHistory = getHistory(data.room);
-      console.log("History for Room : " + data.room + " History: " + dbHistory);
+      getHistory(data.room, queryHistory);
+      console.log("History for Room : " + data.room + " History: " + history);
       socket.to(data.room).emit('receive history', {
-        history: dbHistory
+        history: history
       });
   });
 
@@ -213,7 +212,6 @@ io.on('connection', function (socket) {
     if (addedUser) {
       // Get the dictionary of rooms the user was a part of
 
-      // usernames = getUsernames();
       var usersRooms = usernames[socket.username];
       // Iterate through the rooms, removing the user from each one, and echoing to other
       // members of each room that the user has left
@@ -223,7 +221,6 @@ io.on('connection', function (socket) {
       }
       // Remove the user from the global list of usernames
       delete usernames[socket.username];
-      // setUsernames(usernames);
       numUsers--;
     }
   });
@@ -242,7 +239,6 @@ io.on('connection', function (socket) {
   // Helper function which removes the user from the given room and notifies other participants
   // of the room that a user has left
   function removeUserFromRoom(room) {
-    // rooms = getRooms();
     delete rooms[room].usernames[socket.username];
     rooms[room].numUsers--;
   if (rooms[room].numUsers === 0) {
@@ -256,7 +252,6 @@ io.on('connection', function (socket) {
     numUsers: rooms[room].numUsers
     });
   }
-  // setRooms(rooms);
   // Have the socket leave the room
     socket.leave(room);
   }
