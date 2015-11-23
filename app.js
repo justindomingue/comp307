@@ -1,12 +1,12 @@
 // Setup basic express server
 var express = require('express');
 var redis = require('redis');
+var app = express();
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
-var redisClient = redis.createClient(3001, "localhost", null),
-      app = express();
+var redisClient = redis.createClient(3001, "localhost", null);
 
 redisClient.on("error", function(err) {
       console.log("Redis Error " + err);
