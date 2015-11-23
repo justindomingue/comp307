@@ -5,7 +5,7 @@ var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
-var redisClient = redis.createClient(),
+var redisClient = redis.createClient(3001, "localhost", null),
       app = express();
 
 redisClient.on("error", function(err) {
@@ -29,8 +29,7 @@ var Bot = require('./bot');
 var rooms = {};
 var publicRoom = new Room();
 rooms['#public'] = publicRoom;
-setRooms(rooms);
-console.log(getRooms());
+
 
 function Room() {
   this.numUsers = 0;
@@ -80,6 +79,7 @@ var usernames = {
 io.on('connection', function (socket) {
   // Field to indicate whether a user corresponding to the given socket has been added
   // This field will be set to true if the user logs in
+  console.log("Connection");
   var addedUser = false;
 
   // Validates the user and logs them in
