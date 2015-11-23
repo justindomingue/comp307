@@ -28,3 +28,19 @@ the chatroom.
 - [x] Chat bot
 - [ ] Encryption
 - [ ] Map
+
+
+## How to use REDIS:
+Documentation: https://www.npmjs.com/package/redis
+
+$ npm install redis
+
+required code: 
+var redis = require("redis"),
+    redisClient = redis.createClient();
+
+client.set("string key", "sting val", redis.print);
+
+client.get("foo_rand", function (err, reply) {
+    console.log(reply.toString()); 
+});

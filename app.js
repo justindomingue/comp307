@@ -1,37 +1,16 @@
 // Setup basic express server
 var express = require('express');
+var redis = require('redis');
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
-var redisClient = redis.clientCreate(),
+var redisClient = redis.createClient(),
       app = express();
 
-var redisRouter = express.Router();
-
-//REDIS setters & getters ---------- //
-
-//GET Key value
-redisRouter.get('/redis/get/:key', function(req, response) {
-  redisClient.get(req.params.key, function (error, val) {
-    if (error !== null) console.log("error: " + error);
-    else {
-      response.send("The value for this key is " + val);
-    }
-  });
+redisClient.on("error", function(err) {
+      console.log("Redis Error " + err);
 });
-
-//SET Key Value
-redisRouter.get('/redis/set/:key/:value', function(req, response) {
-  redisClient.set(req.params.key, req.params.value, function (error, result) {
-    if (error !== null) console.log("error: " + error);
-    else {
-      response.send("The value for '"+req.params.key+"' is set to: " + req.params.value);
-    }
-  });
-});
-
-//---------------------------------------- //
 
 server.listen(port, function () {
   console.log('Server listening at port %d', port);
@@ -39,7 +18,6 @@ server.listen(port, function () {
 
 // Routing
 app.use(express.static(__dirname + '/public'));
-app.use('/', router);
 
 var Bot = require('./bot');
 
@@ -57,6 +35,16 @@ rooms['#public'] = publicRoom;
 function Room() {
   this.numUsers = 0;
   this.usernames = {};
+}
+
+function getRooms() {
+    redisClient.get("rooms", function(err, reply) {
+      console.log(reply);
+    });
+}
+
+function setRooms(rooms) {
+    redisClient.set("rooms", rooms, redis.print);
 }
 
 // Dictionary of users currently online
