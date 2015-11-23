@@ -287,11 +287,11 @@ $(function () {
     return COLORS[index];
   }
 
-   function addHistory (history) {
+   function addHistory (history, room) {
       for (i = 0; i < history.length; i++) {
         var combined = history[i].split(":", 2);
         console.log(combined[0] + "    " + combined[1]);
-        var data = {username: combined[0] , message: combined[1]};
+        var data = {username: combined[0] , message: combined[1], room: room};
         addChatMessage(data);
       }
   }
@@ -397,7 +397,7 @@ $(function () {
 
   socket.on('receive history', function(data) {
     console.log("Client Received History : " + data.history);
-    addHistory(data.history);
+    addHistory(data.history, data.room);
   });
 
 });

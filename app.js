@@ -182,8 +182,8 @@ io.on('connection', function (socket) {
   socket.on('get history', function(data) {
       getHistory(data.room, queryHistory);
       console.log("History for Room : " + data.room + " History: " + history);
-      socket.to(data.room).emit('receive history', {
-        history: history
+      socket.emit('receive history', {
+        history: history, room: data.room
       });
   });
 
