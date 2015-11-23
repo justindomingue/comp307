@@ -27,10 +27,10 @@ var Bot = require('./bot');
 // Key = name of room
 // Value = object containing usernames and number of participants
 var rooms = {};
-
 var publicRoom = new Room();
-
 rooms['#public'] = publicRoom;
+setRooms(rooms);
+console.log(getRooms());
 
 function Room() {
   this.numUsers = 0;
@@ -38,13 +38,26 @@ function Room() {
 }
 
 function getRooms() {
-    redisClient.get("rooms", function(err, reply) {
+    return redisClient.get("rooms", function(err, reply) {
       console.log(reply);
     });
 }
 
 function setRooms(rooms) {
     redisClient.set("rooms", rooms, redis.print);
+}
+
+var usernames = {};
+var numUsers = 0;
+
+function getUsernames() {
+  return redisClient.get("usernames", function(err, reply) {
+    console.log(reply);
+  });
+}
+
+function setUsernames(usernames) {
+    redisClient.set("usernames", usernames, redis.print);
 }
 
 // Dictionary of users currently online
@@ -63,8 +76,6 @@ var usernames = {
     }
 }
 */
-var usernames = {};
-var numUsers = 0;
 
 io.on('connection', function (socket) {
   // Field to indicate whether a user corresponding to the given socket has been added
@@ -76,6 +87,7 @@ io.on('connection', function (socket) {
     // Check for the existence of the username in the usernames dictionary
     // DEBUG:
     // console.log(usernames);
+    usernames = getUsernames();
     if (data in usernames) {
       console.log("username " + data + " already taken");
       socket.emit('invalid username', data);
@@ -106,6 +118,7 @@ io.on('connection', function (socket) {
       message: message
     });
 
+    usernames = getUsernames();
     // check message was for bot
     if (message.match(/^chatbot/i)) {
       Bot.answer(message, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
@@ -132,17 +145,21 @@ io.on('connection', function (socket) {
     // Check if the room already exists
     if (!(data.room in rooms)) {
     // Add a new room to the dictionary of rooms
+    rooms = getRooms();
     rooms[data.room] = new Room();
   }
 
   // Subscribe the socket to the room
     socket.join(data.room);
+    usernames = getUsernames();
     // Add the room to the list of rooms the user is a part of
     usernames[data.username][data.room] = data.room;
+    setUsernames(usernames);
     // add the client's username to the list of participants in the given room
     rooms[data.room].usernames[data.username] = data.username;
     // increment the number of users in the room by one
     rooms[data.room].numUsers++;
+    setRooms(rooms);
     // DEBUG:
     // console.log(rooms[data.room].numUsers);
     // echo to all members of the chat that a person has connected
@@ -182,6 +199,7 @@ io.on('connection', function (socket) {
     // was a part of and from the list of global usernames
     if (addedUser) {
       // Get the dictionary of rooms the user was a part of
+      usernames = getUsernames();
       var usersRooms = usernames[socket.username];
       // Iterate through the rooms, removing the user from each one, and echoing to other
       // members of each room that the user has left
@@ -191,6 +209,7 @@ io.on('connection', function (socket) {
       }
       // Remove the user from the global list of usernames
       delete usernames[socket.username];
+      setUsernames(usernames);
       numUsers--;
     }
   });
@@ -198,15 +217,19 @@ io.on('connection', function (socket) {
   // when the user closes an individual tab, disconnect them from that group
   socket.on('disconnect from group', function(data) {
     if (addedUser) {
+      usernames = getUsernames();
       removeUserFromRoom(data.room);
       console.log(socket.username + " left " + data.room);
       delete usernames[socket.username][data.room];
+      setUsernames(usernames);
     }
   });
 
   // Helper function which removes the user from the given room and notifies other participants
   // of the room that a user has left
   function removeUserFromRoom(room) {
+    usernames = getUsernames();
+    rooms  = getRooms();
     delete rooms[room].usernames[socket.username];
     rooms[room].numUsers--;
   if (rooms[room].numUsers === 0) {
@@ -222,5 +245,7 @@ io.on('connection', function (socket) {
   }
   // Have the socket leave the room
     socket.leave(room);
+    setUsernames(usernames);
+    setRooms(rooms);
   }
 });
