@@ -123,7 +123,6 @@ $(function () {
     // If the username is valid
     if (requestedUsername) {
       // Tell the server your username
-      socket.emit('get history', activeID());
       socket.emit('validate username', requestedUsername);
     }
   }
@@ -394,7 +393,7 @@ $(function () {
   });
 
   socket.on('receive history', function(data) {
-    console.log(data.history);
+    console.log("Client Received History : " + data.history);
     addHistory(data.history);
   });
 

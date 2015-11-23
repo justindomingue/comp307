@@ -40,17 +40,19 @@ function Room() {
 }
 
 function getHistory(roomID) {
-  return redisClient.lrange(roomID, 10, function(err, reply) {
+    redisClient.lrange(roomID, 10, function(err, reply) {
     console.log(reply);
+    return reply;
   });
 }
 
 function addHistory(data) {
   var history = getHistory(data.room);
-  if (history.length > 10) {
+  console.log("History on DB for room : " + data.room + " Data: " + history);
+  if (history != null && history.length > 10) {
       redisClient.rpoplpush(data.room, data.message, redis.print);
   }
-  redisClient.lpush(data.room, data.message, redis.print);
+  var response = redisClient.lpush(data.room, data.message, redis.print);
 }
 
 
