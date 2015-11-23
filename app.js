@@ -49,10 +49,7 @@ function getHistory(roomID) {
 function addHistory(data) {
   var history = getHistory(data.room);
   console.log("History on DB for room : " + data.room + " Data: " + history);
-  if (history != null && history.length > 10) {
-      redisClient.rpoplpush(data.room, data.message, redis.print);
-  }
-  var response = redisClient.lpush(data.room, data.message, redis.print);
+  var response = redisClient.rpush(data.room, data.message, redis.print);
 }
 
 
