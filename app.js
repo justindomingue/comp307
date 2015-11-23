@@ -34,7 +34,6 @@ rooms['#public'] = publicRoom;
 var usernames = {};
 var numUsers = 0;
 // setUsernames(usernames);
-console.log(usernames);
 
 function Room() {
   this.numUsers = 0;
@@ -62,6 +61,22 @@ function getUsernames() {
 function setUsernames(usernames) {
     redisClient.set("usernames", usernames, redis.print);
 }
+
+function getHistory(roomID) {
+  return redisClient.lrange(roomID, 10, function(err, reply) {
+    console.log(reply);
+  });
+}
+
+function addHistory(data) {
+  //TO DO: add history to room - data.room
+  var history = getHistory(data.room);
+  if (history.length > 10) {
+      redisClient.rpoplpush(data.room, data.message, redis.print);
+  }
+  redisClient.lpush(data.room, data.message, redis.print);
+}
+
 
 // Dictionary of users currently online
 // Key: username
@@ -118,6 +133,8 @@ io.on('connection', function (socket) {
     // usernames = getUsernames();
 
     // we tell the client to execute 'new message'
+    ///also add to history
+    addHistory(data);
     console.log(socket.username + " sent a message to " + data.room);
     socket.to(data.room).emit('new message', {
       username: socket.username,
@@ -184,6 +201,15 @@ io.on('connection', function (socket) {
       username: socket.username,
       numUsers: rooms[data.room].numUsers
     });
+  });
+
+ //gets the chat history
+  socket.on('get history', function(data) {
+      console.log("Get history called");
+      var dbHistory = getHistory(data);
+      socket.to(data).emit('receive history', {
+        history: dbHistory
+      });
   });
 
   // when the client emits 'typing', we broadcast it to others

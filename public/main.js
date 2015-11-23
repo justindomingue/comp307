@@ -123,6 +123,7 @@ $(function () {
     // If the username is valid
     if (requestedUsername) {
       // Tell the server your username
+      socket.emit('get history', activeID);
       socket.emit('validate username', requestedUsername);
     }
   }
@@ -287,6 +288,12 @@ $(function () {
     return COLORS[index];
   }
 
+   function addHistory (history) {
+      for (i = 0; i < history.length; i++) {
+        addChatMessage(history[i]);
+      }
+  }
+
   // Keyboard events
 
   $window.keydown(function (event) {
@@ -341,6 +348,7 @@ $(function () {
 
     newUserMessage(data);
     socket.emit('user joined', {username: username, room: activeID()});
+    socket.emit()
   });
 
   // This runs if the requested username already exists
@@ -384,4 +392,10 @@ $(function () {
   socket.on('stop typing', function (data) {
     removeChatTyping(data);
   });
+
+  socket.on('receive history', function(data) {
+    console.log(data.history);
+    addHistory(data.history);
+  });
+
 });
