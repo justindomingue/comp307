@@ -6,7 +6,7 @@ var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
-var redisClient = redis.createClient(3001, "localhost", null);
+var redisClient = redis.createClient();
 var history = {};
 
 redisClient.on("error", function(err) {
