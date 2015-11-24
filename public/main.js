@@ -31,7 +31,7 @@ $(function () {
   function activeID() {
     return $('.tabs li.active a').attr('href');
   }
-  
+
   // Returns the active tab
   function active() {
     return $(activeID());
@@ -41,32 +41,32 @@ $(function () {
   /*function activeMessages() {
     return active().find('.messages');
   }*/
-  
+
   // Returns a jQuery selector for the portion of the document containing messages
   // for the given roomID
   function getMessages(roomID) {
     return $(roomID).find('.messages');
   }
-  
+
   // TABS
-    
+
   function addTab(name) {
     // 1. Add to tab list
     var $li = $('<li><a href="#' + name + '">' + name + '</a></li>');
     $('.tabs ul.horizontal').append($li);
-    
+
     // 2. Add page
     var $div = $('<div class="tab" id="' + name + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
     $('.tabs').append($div);
-    
+
     $('.tabs').trigger('destroy');
     $('.tabs').tabslet();
     $('.tabs').trigger('show', '#'+name);
-    
+
     // 3. Make a request to join the room
     sendJoinRequest('#'+name);
   }
-  
+
   function removeTab(name) {
     // Delete tab content
     $('.tabs').trigger('next');
@@ -76,14 +76,14 @@ $(function () {
 
   $('.tabs').tabslet();
   active().show();
-  
+
   // Notifications
   // data.group is the tab name
   // if data.count, deletes the notification
   // else, set the text to data.count
   function updateNotification(data) {
     group = '#'+data.group;
-    
+
     $tab = $('.tabs li a[href='+group+'] span');
     if (data.count == 0) {
       $tab.remove();
@@ -95,24 +95,24 @@ $(function () {
       $tab.text(data.count);
     }
   }
-  
+
   function validateTabName(name) {
     name = '#'+name;
     socket.emit('validate room name', name);
   }
-  
+
   // Emits a room join request to the server
   function sendJoinRequest(name) {
     var data = {
       room: name,
       username: username
     }
-      
+
     socket.emit('user joined', data);
   }
-  
+
   // Socket
-  
+
   //  Sets a message to display upon adding a participant to a chat
   function addParticipantsMessage (data) {
     var message = '';
@@ -123,7 +123,7 @@ $(function () {
     }
     log(message, data.room);
   }
-  
+
   // Sets a message to display upon logging in a new user
   function newUserMessage (data) {
     var message = '';
@@ -134,7 +134,7 @@ $(function () {
     }
     log(message, activeID());
   }
-  
+
   // Sets the client's username
   function setUsername() {
     var requestedUsername = cleanInput($usernameInput.val().trim());
@@ -145,7 +145,7 @@ $(function () {
       socket.emit('validate username', requestedUsername);
     }
   }
-  
+
   // Sends a chat message
   function sendMessage () {
     var message = $inputMessage.val();
@@ -154,7 +154,7 @@ $(function () {
     // if there is a non-empty message and a socket connection
     if (message) {
       $inputMessage.val('');
-      
+
       joinRegex = /^\/join ([\w|\s]*)/.exec(message)
       leaveRegex = /^\/leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
@@ -194,7 +194,7 @@ $(function () {
       options.fade = false;
       $typingMessages.remove();
     }
-    
+
     var body = data.message;
     if (options.type === 'img') {
       body = '<img class="chatbot-img" src="' + data.message + '">';
@@ -228,7 +228,7 @@ $(function () {
       $(this).remove();
     });
   }
-  
+
   // Adds a message element to the messages and scrolls to the bottom
   // el - The element to add as a message
   // room - The chat room to add it to
@@ -237,7 +237,7 @@ $(function () {
   //   all other messages (default = false)
   function addMessageElement (el, roomID, options) {
     var $el = $(el);
-    
+
     // Setup default options
     if (!options) {
       options = {};
@@ -306,8 +306,17 @@ $(function () {
     return COLORS[index];
   }
 
+   function addHistory (history, room) {
+      for (i = 0; i < history.length; i++) {
+        var combined = history[i].split(":", 2);
+        console.log(combined[0] + "    " + combined[1]);
+        var data = {username: combined[0] , message: combined[1], room: room};
+        addChatMessage(data);
+      }
+  }
+
   // Keyboard events
-  
+
   $window.keydown(function (event) {
     // Auto-focus the current input when a key is typed
     if (!(event.ctrlKey || event.metaKey || event.altKey)) {
@@ -323,7 +332,7 @@ $(function () {
         setUsername();
       }
     }
-  }); 
+  });
 
   $inputMessage.on('input', function () {
     updateTyping();
@@ -342,31 +351,32 @@ $(function () {
   });
 
   // Socket events
-  
+
   // This runs after socket validates the user's username
   socket.on('valid username', function (data) {
-  	$loginPage.fadeOut();
-  	$chatPage.show();
-  	$loginPage.off('click');
-  	$currentInput = $inputMessage.focus();
-  	
-  	username = data.username;
-  	connected = true;
-  	// Display the welcome message  	
+    $loginPage.fadeOut();
+    $chatPage.show();
+    $loginPage.off('click');
+    $currentInput = $inputMessage.focus();
+
+    username = data.username;
+    connected = true;
+    // Display the welcome message
     var message = "Welcome to the chat. ";
     log(message, activeID(), {
       prepend: true
     });
-    
+
     newUserMessage(data);
     socket.emit('user joined', {username: username, room: activeID()});
+    socket.emit('get history', {room: activeID()});
   });
-  
+
   // This runs if the requested username already exists
   socket.on('invalid username', function (data) {
     $loginMsg.text("The username '" + data + "' is already taken. Please try another!");
     $currentInput.val('');
-  	$currentInput.focus();
+    $currentInput.focus();
   });
 
   // Whenever the server emits 'new message', update the chat body
@@ -378,8 +388,8 @@ $(function () {
   socket.on('chatbot message', function (data) {
     addChatMessage(data, data.options);
   });
-  
-  // Whenever the server emits 'user joined', log it in the chat body of the appropriate room, 
+
+  // Whenever the server emits 'user joined', log it in the chat body of the appropriate room,
   // and add it to the list of rooms the user is a part of
   socket.on('user joined', function (data) {
     usersRooms[data.room] = data.room;
@@ -403,4 +413,10 @@ $(function () {
   socket.on('stop typing', function (data) {
     removeChatTyping(data);
   });
+
+  socket.on('receive history', function(data) {
+    console.log("Client Received History : " + data.history);
+    addHistory(data.history, data.room);
+  });
+
 });

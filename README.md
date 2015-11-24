@@ -28,3 +28,41 @@ the chatroom.
 - [x] Chat bot
 - [ ] Encryption
 - [ ] Map
+
+
+**************************** REDIS ************************
+## How to use REDIS:
+Documentation: https://www.npmjs.com/package/redis
+
+$ npm install redis
+
+We then need to set the file to where the data will be saved
+
+FROM comp307 base directory:
+
+$cd node_modules/redis-stable/src
+$./redis-cli                            --will run redis client
+
+Within Redis Client then type:
+
+CONFIG SET dir ../../../
+CONFIG SET dbfilename redisDatbase.rdb
+
+---
+To start redis server
+
+FROM comp307 base directory:
+
+$cd node_modules/redis-stable/src
+$./redis-server
+
+NOTE: this will start on the default port described in redis.conf
+To change the conf, go to (from comp307 root)
+
+$vim node_modules/redis-stable/redis.conf
+
+* Then change port too desired port for redis server. Vim command : ?port *
+
+
+
+******************************************************************
