@@ -77,6 +77,25 @@ $(function () {
   $('.tabs').tabslet();
   active().show();
   
+  // Notifications
+  // data.group is the tab name
+  // if data.count, deletes the notification
+  // else, set the text to data.count
+  function updateNotification(data) {
+    group = '#'+data.group;
+    
+    $tab = $('.tabs li a[href='+group+'] span');
+    if (data.count == 0) {
+      $tab.remove();
+    } else {
+      if ($tab[0] === undefined) {
+        $('.tabs li a[href='+group+']').append('<span class="badge"></span>');
+        $tab = $('.tabs li a[href='+group+'] span');
+      }
+      $tab.text(data.count);
+    }
+  }
+  
   function validateTabName(name) {
     name = '#'+name;
     socket.emit('validate room name', name);
