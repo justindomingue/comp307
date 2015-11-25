@@ -19,7 +19,7 @@ $(function () {
 
   // Prompt for setting a username
   var username;
-  var usersRooms = {'#public': '#public'};
+  var usersRooms = ['#public'];
   var connected = false;
   var typing = false;
   var lastTypingTime;
@@ -62,20 +62,43 @@ $(function () {
     $('.tabs').trigger('destroy');
     $('.tabs').tabslet();
     $('.tabs').trigger('show', '#'+name);
-
-    // 3. Make a request to join the room
-    sendJoinRequest('#'+name);
   }
 
   function removeTab(name) {
     // Delete tab content
-    $('.tabs').trigger('next');
+    //$('.tabs').trigger('next');
     $(name).remove();
     $('.tabs ul.horizontal li a[href='+name+']')[0].remove();
+  }
+  
+  function switchTabToNearestNeighbor(roomIndex) {
+    var roomID;
+    if (usersRooms.length > roomIndex + 1) {
+  	  // Switch the user to the tab to the right
+  	  // Get the id of the room to the right
+  	  roomID = usersRooms[roomIndex + 1];
+  	    
+  	  // Switch to this tab
+  	  $('.tabs').trigger('show', roomID);
+  	} else {
+  	  // Switch the user to the tab to the left
+  	  roomID = usersRooms[roomIndex - 1];
+  	  $('.tabs').trigger('show', roomID);
+  	}
   }
 
   $('.tabs').tabslet();
   active().show();
+  
+  // Returns the index of the given room, and -1 if the user is not in the given room
+  function getRoomIndex(roomID) {
+    for (var i = 0; i < usersRooms.length; i++) {
+      if (usersRooms[i] === roomID) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
   // Notifications
   // data.group is the tab name
@@ -109,6 +132,15 @@ $(function () {
     }
 
     socket.emit('user joined', data);
+  }
+  
+  // Emits a leave room request to the server
+  function sendLeaveRequest(name) {
+    var data = {
+      room: name
+    }
+    
+    socket.emit('user left', data);
   }
 
   // Socket
@@ -159,14 +191,40 @@ $(function () {
       leaveRegex = /^\/leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
         // Check if the user is already a member of the room
-        if ('#'+joinRegex[1] in usersRooms) {
-          // TODO: Switch to tab of room they entered
+        var roomIndex = getRoomIndex('#'+joinRegex[1]);
+        if (roomIndex >= 0) {
+          // Switch to tab of room they entered
           $('.tabs').trigger('show', '#'+joinRegex[1]);
         } else {
+          // Ensure that $('#no-chats') is empty
+          $('#no-chats').empty();
           addTab(joinRegex[1]);
+          usersRooms.push('#'+joinRegex[1]);
+          // Make a request to join the room
+    	  sendJoinRequest('#'+joinRegex[1]);
         }
       } else if (leaveRegex) {
-        removeTab('#'+leaveRegex[1]);
+        // Check if the user is requesting to leave a room they are a member of
+        var roomIndex = getRoomIndex('#'+leaveRegex[1]);
+        if (roomIndex >= 0) {
+          // If the user left the currently active room, and it wasn't the last room they were in,
+          // switch them to a neighboring room
+          if ('#'+leaveRegex[1] === activeID() && usersRooms.length > 1) {
+            switchTabToNearestNeighbor(roomIndex);
+          }
+          removeTab('#'+leaveRegex[1]);
+          usersRooms.splice(roomIndex, 1);
+          // If the user is no longer in any rooms, tell them
+          if (usersRooms.length === 0) {
+            $('#no-chats').append('<h2>You have left all rooms :(</h2>');
+            $('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
+          }
+          // Notify the server that the user has left
+          sendLeaveRequest('#'+leaveRegex[1]);
+        } else {
+          // The user was not a member of the room. Notify them
+          alert("You are not a member of '" + leaveRegex[1] + "'.");
+        }
       } else if (connected) {
         addChatMessage({
           username: username,
@@ -392,7 +450,6 @@ $(function () {
   // Whenever the server emits 'user joined', log it in the chat body of the appropriate room,
   // and add it to the list of rooms the user is a part of
   socket.on('user joined', function (data) {
-    usersRooms[data.room] = data.room;
     log(data.username + ' joined', data.room);
     addParticipantsMessage(data);
   });

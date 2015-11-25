@@ -226,7 +226,7 @@ io.on('connection', function (socket) {
   });
 
   // when the user closes an individual tab, disconnect them from that group
-  socket.on('disconnect from group', function(data) {
+  socket.on('user left', function(data) {
     if (addedUser) {
 
       removeUserFromRoom(data.room);
@@ -241,18 +241,18 @@ io.on('connection', function (socket) {
   function removeUserFromRoom(room) {
     delete rooms[room].usernames[socket.username];
     rooms[room].numUsers--;
-  if (rooms[room].numUsers === 0) {
-    // Remove the room entirely
-    delete rooms[room];
-  } else {
-    // Emit to the remaining users that the user has left
-    socket.to(room).emit('user left', {
-    username: socket.username,
-    room: room,
-    numUsers: rooms[room].numUsers
-    });
-  }
-  // Have the socket leave the room
+    if (rooms[room].numUsers === 0) {
+      // Remove the room entirely
+      delete rooms[room];
+    } else {
+      // Emit to the remaining users that the user has left
+      socket.to(room).emit('user left', {
+        username: socket.username,
+        room: room,
+        numUsers: rooms[room].numUsers
+      });
+    }
+    // Have the socket leave the room
     socket.leave(room);
   }
 });
