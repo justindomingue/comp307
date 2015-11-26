@@ -11,7 +11,7 @@ $(function () {
   // Initialize variables
   var $window = $(window);
   var $title = $('title');
-  var defaultTitle = "Socket.IO Chat";
+  var defaultTitle = "Aristochat";
   var $usernameInput = $('.usernameInput'); // Input for username
   var $inputMessage = $('.inputMessage'); // Input message input box
 
@@ -40,15 +40,14 @@ $(function () {
     return $(activeID());
   }
 
-  // Replaced with getMessages(roomID)
-  /*function activeMessages() {
-    return active().find('.messages');
-  }*/
-
   // Returns a jQuery selector for the portion of the document containing messages
   // for the given roomID
   function getMessages(roomID) {
     return $(roomID).find('.messages');
+  }
+  
+  function getTypingMessagesSelector(roomID) {
+    return $(roomID).find('.typing.messages');
   }
 
   // TABS
@@ -89,7 +88,6 @@ $(function () {
   $('.after_event').tabslet();
   $('.after_event').on("_after", function() {
     // Remove notifications for the tab
-    getMessages("#public").append('<li>User logged in</li>');
     var data = {
       room: activeID(),
       count: 0
@@ -383,8 +381,8 @@ $(function () {
     // When the client hits ENTER on their keyboard
     if (event.which === 13) {
       if (username) {
-        sendMessage();
         socket.emit('stop typing', {room: activeID()});
+        sendMessage();
         typing = false;
       } else {
         setUsername();
