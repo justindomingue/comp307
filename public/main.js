@@ -45,10 +45,6 @@ $(function () {
   function getMessages(roomID) {
     return $(roomID).find('.messages');
   }
-  
-  function getTypingMessagesSelector(roomID) {
-    return $(roomID).find('.typing.messages');
-  }
 
   // TABS
 
