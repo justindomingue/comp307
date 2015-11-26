@@ -345,7 +345,6 @@ $(function () {
 
   // Gets the 'X is typing' messages of a user
   function getTypingMessages (data) {
-    // $('.typing.message')$(data.room).find('.typing.message')
     return $('.typing.message').filter(function (i) {
       return $(this).data('username') === data.username;
     });
@@ -384,7 +383,6 @@ $(function () {
       if (username) {
         socket.emit('stop typing', {room: activeID()});
         sendMessage();
-        //getMessages(activeID()).append('<li>'+activeID()+'</li>');
         typing = false;
       } else {
         setUsername();
@@ -473,7 +471,6 @@ $(function () {
 
   // Whenever the server emits 'stop typing', kill the typing message
   socket.on('stop typing', function (data) {
-    //getMessages("#public").append('<li>'+data.room+'</li>');
     removeChatTyping(data);
   });
 
