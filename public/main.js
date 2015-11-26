@@ -443,6 +443,7 @@ $(function () {
     if (data.room != activeID()) {
       data.count = ++unreadMessages[data.room];
       updateNotification(data);
+      ohSnap('('+data.room+') '+data.username+': ' + data.message, 'blue');
     }
   });
 
