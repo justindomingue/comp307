@@ -7,11 +7,11 @@ var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
 // var redisClient = redis.createClient();
-var redisClient = redis.createClient(6379, 'comp307.redis.cache.windows.net', {auth_pass: 'F0v6DGIxpKGaw4tHS/qtId13rT4AU9D0a9YbnErRjf0='});
+var redisClient = redis.createClient(6379, 'comp307.redis.cache.windows.net', { auth_pass: 'F0v6DGIxpKGaw4tHS/qtId13rT4AU9D0a9YbnErRjf0=' });
 var history = {};
 
-redisClient.on("error", function(err) {
-      console.log("Redis Error " + err);
+redisClient.on("error", function (err) {
+  console.log("Redis Error " + err);
 });
 
 server.listen(port, function () {
@@ -34,6 +34,7 @@ rooms['#public'] = publicRoom;
 
 
 var usernames = {};
+var locations = {};
 var numUsers = 0;
 
 function Room() {
@@ -43,8 +44,8 @@ function Room() {
 
 function getHistory(roomID, callback) {
   console.log("RoomID get history: " + roomID);
-    redisClient.lrange(roomID, 0, -1,  function(err, reply) {
-      callback(err, reply);
+  redisClient.lrange(roomID, 0, -1, function (err, reply) {
+    callback(err, reply);
   });
 }
 
@@ -53,7 +54,7 @@ function queryHistory(err, reply) {
 }
 
 function addHistory(data, username) {
-  var input = username + ":" +  data.message;
+  var input = username + ":" + data.message;
   var response = redisClient.rpush(data.room, input, redis.print);
   console.log("RoomID addHistory: " + data.room);
   getHistory(data.room, queryHistory);
@@ -82,7 +83,13 @@ io.on('connection', function (socket) {
   // Field to indicate whether a user corresponding to the given socket has been added
   // This field will be set to true if the user logs in
   var addedUser = false;
-
+ 
+  // Send the user every
+  for (var key in locations) {
+    console.log("Sending location " + locations[key]);
+   socket.emit('receive location', { 'username':key, 'lat':locations[key].lat, 'lng':locations[key].lng });
+  }
+  
   // Validates the user and logs them in
   socket.on('validate username', function (data) {
     // Check for the existence of the username in the usernames dictionary
@@ -125,19 +132,19 @@ io.on('connection', function (socket) {
 
     // check message was for bot
     if (message.match(/^chatbot/i)) {
-      Bot.answer(message, {users: Object.keys(usernames), numUsers: numUsers}, function(answer) {
+      Bot.answer(message, { users: Object.keys(usernames), numUsers: numUsers }, function (answer) {
         console.log("Chatbot replying.");
         socket.to(data.room).emit('chatbot message', {
           username: 'chatbot',
           room: data.room,
           message: answer.message,
-          options: {type: answer.type }
+          options: { type: answer.type }
         });
         socket.emit('chatbot message', {
           username: 'chatbot',
           room: data.room,
           message: answer.message,
-          options: {type: answer.type}
+          options: { type: answer.type }
         });
       });
     }
@@ -148,12 +155,12 @@ io.on('connection', function (socket) {
 
     // Check if the room already exists
     if (!(data.room in rooms)) {
-    // Add a new room to the dictionary of rooms
+      // Add a new room to the dictionary of rooms
 
-    rooms[data.room] = new Room();
-  }
+      rooms[data.room] = new Room();
+    }
 
-  // Subscribe the socket to the room
+    // Subscribe the socket to the room
     socket.join(data.room);
 
     // Add the room to the list of rooms the user is a part of
@@ -179,13 +186,23 @@ io.on('connection', function (socket) {
     });
   });
 
- //gets the chat history
-  socket.on('get history', function(data) {
-      getHistory(data.room, queryHistory);
-      console.log("History for Room : " + data.room + " History: " + history);
-      socket.emit('receive history', {
-        history: history, room: data.room
-      });
+  socket.on('my location', function (data) {
+    var usr = data.username,
+      lat = data.lat,
+      lng = data.lng;
+      
+    locations[usr] = {'lat':lat, 'lng':lng };
+
+    io.sockets.emit('receive location', { 'username':usr, 'lat':lat, 'lng':lng });
+  });
+  
+  //gets the chat history
+  socket.on('get history', function (data) {
+    getHistory(data.room, queryHistory);
+    console.log("History for Room : " + data.room + " History: " + history);
+    socket.emit('receive history', {
+      history: history, room: data.room
+    });
   });
 
   // when the client emits 'typing', we broadcast it to others
@@ -223,11 +240,14 @@ io.on('connection', function (socket) {
       // Remove the user from the global list of usernames
       delete usernames[socket.username];
       numUsers--;
+      
+      // Remove location of user
+      delete locations[socket.username];
     }
   });
 
   // when the user closes an individual tab, disconnect them from that group
-  socket.on('user left', function(data) {
+  socket.on('user left', function (data) {
     if (addedUser) {
 
       removeUserFromRoom(data.room);

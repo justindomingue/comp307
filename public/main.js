@@ -414,7 +414,12 @@ $(function () {
     $chatPage.show();
     $loginPage.off('click');
     $currentInput = $inputMessage.focus();
-
+    
+    refreshMap();
+    getLocation(function(position) {
+      socket.emit('my location', {username:data.username, lat: position.coords.latitude, lng: position.coords.longitude});
+    });
+    
     username = data.username;
     connected = true;
     // Display the welcome message
@@ -460,6 +465,10 @@ $(function () {
   // Whenever the server emits 'user left', log it in the chat body
   socket.on('user left', function (data) {
     log(data.username + ' left', data.room);
+        
+    // for map
+    clearMarker(data.username);
+    
     addParticipantsMessage(data);
     removeChatTyping(data);
   });
@@ -479,4 +488,8 @@ $(function () {
     addHistory(data.history, data.room);
   });
 
+  socket.on('receive location', function(data) {
+    console.log("New location for " + data.username + " : " + data.lat + " " + data.lng);
+    addMarker(data.username, data.lat, data.lng);
+  });
 });

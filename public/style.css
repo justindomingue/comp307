@@ -4,6 +4,12 @@
   box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 html {
   font-weight: 300;
   -webkit-font-smoothing: antialiased;
@@ -270,4 +276,28 @@ ul {
   color:white;
   background-color: #E9573F;
 
+}
+
+#map-container {
+  position: fixed !important;
+  bottom: 60px;
+  right: 0px;
+  z-index: 10;
+  min-width: 105px;
+  min-height: 40px;
+}
+
+#toggle-map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 15;
+  padding: 10px;
+  background-color:  rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+}
+#map {
+  height: 350px;
+  width: 350px;
+  z-index: 12;
 }
