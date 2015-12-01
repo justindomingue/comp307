@@ -32,15 +32,9 @@ var rooms = {};
 var publicRoom = new Room();
 rooms['#public'] = publicRoom;
 
-
-var usernames = {};
-var locations = {};
-var numUsers = 0;
-
-function Room() {
-  this.numUsers = 0;
-  this.usernames = {};
-}
+// Initialize an array of private chats
+// Values = arrays of the two participants, e.g. ['bob', 'alice']
+var privateChats = [];
 
 // Dictionary of users currently online
 // Key: username
@@ -58,6 +52,19 @@ var usernames = {
     }
 }
 */
+var usernames = {};
+var locations = {};
+var numUsers = 0;
+
+var ChatTypeEnum = {
+  group: "group",
+  individual: "individual"
+}
+
+function Room() {
+  this.numUsers = 0;
+  this.usernames = {};
+}
 
 io.on('connection', function (socket) {
   // Field to indicate whether a user corresponding to the given socket has been added
@@ -73,16 +80,12 @@ io.on('connection', function (socket) {
   // Validates the user and logs them in
   socket.on('validate username', function (data) {
     // Check for the existence of the username in the usernames dictionary
-    // DEBUG:
-    // console.log(usernames);
 
     console.log("retrieved usernames");
     if (data in usernames) {
       console.log("username " + data + " already taken");
       socket.emit('invalid username', data);
     } else {
-      // DEBUG:
-      // console.log(usernames[data]);
       console.log(data + " logged in");
       socket.username = data;
       usernames[data] = {};
@@ -107,7 +110,6 @@ io.on('connection', function (socket) {
       room: data.room,
       message: message
     });
-
 
     // check message was for bot
     if (message.match(/^:/)) {
@@ -137,40 +139,44 @@ io.on('connection', function (socket) {
   socket.on('user joined', function (data) {
     console.log(data.username + " joined " + data.room);
 
-    // Check if the room already exists
-    if (!(data.room in rooms)) {
-      // Add a new room to the dictionary of rooms
+    // Check the type of the room: group or individual
+    if (data.chatType === ChatTypeEnum.group) {
+        // Check if the room already exists
+		if (!(data.room in rooms)) {
+		  // Add a new room to the dictionary of rooms
+		  rooms[data.room] = new Room();
+		}
 
-      rooms[data.room] = new Room();
+		// Subscribe the socket to the room
+		socket.join(data.room);
+
+		// Add the room to the list of rooms the user is a part of
+		usernames[data.username][data.room] = data.room;
+
+		// add the client's username to the list of participants in the given room
+		rooms[data.room].usernames[data.username] = data.username;
+		// increment the number of users in the room by one
+		rooms[data.room].numUsers++;
+
+		// echo to all members of the chat that a person has connected
+		socket.emit('user joined', {
+		  room: data.room,
+		  username: socket.username,
+		  numUsers: rooms[data.room].numUsers
+		});
+		//get history
+		getHistory(data.room, queryHistory);
+
+		socket.to(data.room).emit('user joined', {
+		  room: data.room,
+		  username: socket.username,
+		  numUsers: rooms[data.room].numUsers
+		});
+    } else {
+      // HERE! Do stuff for individual chat
+    
     }
-
-    // Subscribe the socket to the room
-    socket.join(data.room);
-
-    // Add the room to the list of rooms the user is a part of
-    usernames[data.username][data.room] = data.room;
-
-    // add the client's username to the list of participants in the given room
-    rooms[data.room].usernames[data.username] = data.username;
-    // increment the number of users in the room by one
-    rooms[data.room].numUsers++;
-
-    // DEBUG:
-    // console.log(rooms[data.room].numUsers);
-    // echo to all members of the chat that a person has connected
-    socket.emit('user joined', {
-      room: data.room,
-      username: socket.username,
-      numUsers: rooms[data.room].numUsers
-    });
-    //get history
-    getHistory(data.room, queryHistory);
-
-    socket.to(data.room).emit('user joined', {
-      room: data.room,
-      username: socket.username,
-      numUsers: rooms[data.room].numUsers
-    });
+    
   });
 
   socket.on('my location', function (data) {

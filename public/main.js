@@ -13,6 +13,7 @@ $(function () {
   var $title = $('title');
   var defaultTitle = "Aristochat";
   var $usernameInput = $('.usernameInput'); // Input for username
+  var $username = $('.username'); // Selector for the username corresponding to a message
   var $inputMessage = $('.inputMessage'); // Input message input box
 
   var $loginPage = $('.login.page'); // The login page
@@ -22,11 +23,17 @@ $(function () {
   // Prompt for setting a username
   var username;
   var usersRooms = ['#public'];
+  var privateChats = [];
   var connected = false;
   var typing = false;
   var lastTypingTime;
   var $currentInput = $usernameInput.focus();
   var unreadMessages = {'#public': 0};
+  
+  var ChatTypeEnum = {
+    group: "group",
+    individual: "individual"
+  };
 
   var socket = io();
 
@@ -122,10 +129,11 @@ $(function () {
   }
 
   // Emits a room join request to the server
-  function sendJoinRequest(name) {
+  function sendJoinRequest(name, chatType) {
     var data = {
       room: name,
-      username: username
+      username: username,
+      chatType: chatType
     }
 
     socket.emit('user joined', data);
@@ -188,21 +196,7 @@ $(function () {
       leaveRegex = /^:leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
         var name = joinRegex[1].replace(/ /g,"_");
-
-        // Check if the user is already a member of the room
-        var roomIndex = usersRooms.indexOf('#'+name);
-        if (roomIndex >= 0) {
-          // Switch to tab of room they entered
-          $('.tabs').trigger('show', '#'+name);
-        } else {
-          $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
-          addTab(name);
-          usersRooms.push('#'+name);
-          unreadMessages['#'+name] = 0;
-          // Make a request to join the room
-    	  sendJoinRequest('#'+name);
-    	  //$('.tabs').trigger('next');
-        }
+        handleJoin(name, ChatTypeEnum.group);
       } else if (leaveRegex) {
         var name = leaveRegex[1].replace(/ /g,"_");
 
@@ -235,6 +229,34 @@ $(function () {
         socket.emit('new message', {message: message, room: activeID()});
       }
     }
+  }
+  
+  function handleJoin(name, chatType) {
+    // Check if the user is already a member of the room
+    var roomIndex;
+    if (chatType === ChatTypeEnum.group) {
+      roomIndex = usersRooms.indexOf('#'+name);
+    } else {
+      roomIndex = privateChats.indexOf('#'+name);
+    }
+    
+	if (roomIndex >= 0) {
+	  // Switch to tab of room they entered
+	  $('.tabs').trigger('show', '#'+name);
+	} else {
+	  $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
+	  addTab(name);
+	  if (chatType === ChatTypeEnum.group) {
+	    usersRooms.push('#'+name);
+	    unreadMessages['#'+name] = 0;
+	  } else {
+	    privateChats.push('#'+name);
+	    unreadMessages['#'+name] = 0;
+	  }
+	  
+	  // Make a request to join the chat
+	  sendJoinRequest('#'+name, chatType);
+	}
   }
 
   // Log a message
@@ -409,6 +431,12 @@ $(function () {
   $inputMessage.click(function () {
     $inputMessage.focus();
   });
+  
+  $(document).on('click', '.username', function() {
+    //getMessages(activeID()).append($(this).html());
+    var name = $(this).html();
+    handleJoin(name, ChatTypeEnum.individual);
+  });
 
   // Socket events
 
@@ -433,7 +461,8 @@ $(function () {
     });
 
     newUserMessage(data);
-    socket.emit('user joined', {username: username, room: activeID()});
+    sendJoinRequest(activeID(), ChatTypeEnum.group);
+    //socket.emit('user joined', {username: username, room: activeID()});
   });
 
   // This runs if the requested username already exists
