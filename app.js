@@ -8,7 +8,7 @@ var port = process.env.PORT || 3000;
 
 // var redisClient = redis.createClient();
 var redisClient = redis.createClient(6379, 'comp307.redis.cache.windows.net', { auth_pass: 'F0v6DGIxpKGaw4tHS/qtId13rT4AU9D0a9YbnErRjf0=' });
-var history = {};
+var history =  {};
 
 redisClient.on("error", function (err) {
   console.log("Redis Error " + err);
@@ -45,12 +45,12 @@ function Room() {
 function getHistory(roomID, callback) {
   console.log("RoomID get history: " + roomID);
   redisClient.lrange(roomID, 0, -1, function (err, reply) {
-    callback(err, reply);
+    callback(err, reply, roomID);
   });
 }
 
-function queryHistory(err, reply) {
-  history = reply;
+function queryHistory(err, reply, roomID) {
+  history[roomID] = reply;
 }
 
 function addHistory(data, username) {
@@ -58,7 +58,7 @@ function addHistory(data, username) {
   var response = redisClient.rpush(data.room, input, redis.print);
   console.log("RoomID addHistory: " + data.room);
   getHistory(data.room, queryHistory);
-  console.log("History on DB for room : " + data.room + " Data: " + history);
+  console.log("History on DB for room : " + data.room + " Data: " + history[data.room]);
 }
 
 
@@ -83,13 +83,13 @@ io.on('connection', function (socket) {
   // Field to indicate whether a user corresponding to the given socket has been added
   // This field will be set to true if the user logs in
   var addedUser = false;
- 
+
   // Send the user every
   for (var key in locations) {
     console.log("Sending location " + locations[key]);
    socket.emit('receive location', { 'username':key, 'lat':locations[key].lat, 'lng':locations[key].lng });
   }
-  
+
   // Validates the user and logs them in
   socket.on('validate username', function (data) {
     // Check for the existence of the username in the usernames dictionary
@@ -190,18 +190,18 @@ io.on('connection', function (socket) {
     var usr = data.username,
       lat = data.lat,
       lng = data.lng;
-      
+
     locations[usr] = {'lat':lat, 'lng':lng };
 
     io.sockets.emit('receive location', { 'username':usr, 'lat':lat, 'lng':lng });
   });
-  
+
   //gets the chat history
   socket.on('get history', function (data) {
     getHistory(data.room, queryHistory);
-    console.log("History for Room : " + data.room + " History: " + history);
+    console.log("History for Room : " + data.room + " History: " + history[data.room]);
     socket.emit('receive history', {
-      history: history, room: data.room
+      history: history[data.room], room: data.room
     });
   });
 
@@ -240,7 +240,7 @@ io.on('connection', function (socket) {
       // Remove the user from the global list of usernames
       delete usernames[socket.username];
       numUsers--;
-      
+
       // Remove location of user
       delete locations[socket.username];
     }
