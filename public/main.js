@@ -69,7 +69,7 @@ $(function () {
   function removeTab(name) {
     // Delete tab content
     $(name).remove();
-    $('.tabs ul.horizontal li a[href='+name+']')[0].remove();
+    $('.tabs ul.horizontal li a[href="'+name+'"]')[0].remove();
   }
 
   function switchTabToNearestNeighbor(roomIndex) {
@@ -104,14 +104,14 @@ $(function () {
   // else, set the text to data.count
   function updateNotification(data) {
     group = data.room;
-    $tab = $('.tabs li a[href='+group+'] span');
+    $tab = $('.tabs li a[href="'+group+'"] span');
     if (data.count === 0) {
       $tab.remove();
       $title.html(defaultTitle);  // Reset the webpage's title to the default
     } else {
       if ($tab[0] === undefined) {
-        $('.tabs li a[href='+group+']').append('<span class="badge"></span>');
-        $tab = $('.tabs li a[href='+group+'] span');
+        $('.tabs li a[href="'+group+'"]').append('<span class="badge"></span>');
+        $tab = $('.tabs li a[href="'+group+'"] span');
       }
       $tab.text(data.count);
       $title.html("Message in " + group.substr(1) + " (" + data.count +")");
