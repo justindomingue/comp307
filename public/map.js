@@ -29,15 +29,15 @@ function initMap() {
     center: {lat: 45.553, lng: -73.672},
     mapTypeControl: true,
     mapTypeControlOptions: {
-      mapTypeIds: [google.maps.MapTypeId.ROADMAP, customMapTypeId],
+      mapTypeIds: [google.maps.MapTypeId.ROADMAP],
       style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
       position: google.maps.ControlPosition.RIGHT_TOP
 
     }
   });
 
-  map.mapTypes.set(customMapTypeId, customMapType);
-  map.setMapTypeId(customMapTypeId);
+  // map.mapTypes.set(customMapTypeId, customMapType);
+  // map.setMapTypeId(customMapTypeId);
 }
 
 function addMarker(username, lat, lng) {
@@ -49,7 +49,7 @@ function addMarker(username, lat, lng) {
     animation: google.maps.Animation.DROP,
     title: 'justin'
     });
-    
+
     markers[username] = marker;
     console.log("Markers " + markers);
 }

@@ -292,6 +292,8 @@ $(function () {
   // options.prepend - If the element should prepend
   //   all other messages (default = false)
   function addMessageElement (el, roomID, options) {
+    console.log(el);
+
     var $el = $(el);
 
     // Setup default options

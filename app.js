@@ -275,7 +275,7 @@ function addHistory(data, username) {
   var input = username + ":" + data.message;
   var response = redisClient.rpush(data.room, input, redis.print);
   console.log("RoomID addHistory: " + data.room);
-  getHistory(data.room, queryHistory);
+  // getHistory(data.room, queryHistory);
   console.log("History on DB for room : " + data.room + " Data: " + history[data.room]);
 }
 
