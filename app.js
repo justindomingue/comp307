@@ -42,26 +42,6 @@ function Room() {
   this.usernames = {};
 }
 
-function getHistory(roomID, callback) {
-  console.log("RoomID get history: " + roomID);
-  redisClient.lrange(roomID, 0, -1, function (err, reply) {
-    callback(err, reply, roomID);
-  });
-}
-
-function queryHistory(err, reply, roomID) {
-  history[roomID] = reply;
-}
-
-function addHistory(data, username) {
-  var input = username + ":" + data.message;
-  var response = redisClient.rpush(data.room, input, redis.print);
-  console.log("RoomID addHistory: " + data.room);
-  getHistory(data.room, queryHistory);
-  console.log("History on DB for room : " + data.room + " Data: " + history[data.room]);
-}
-
-
 // Dictionary of users currently online
 // Key: username
 // Value: a dictionary of rooms the user is in
@@ -200,9 +180,9 @@ io.on('connection', function (socket) {
   socket.on('get history', function (data) {
     getHistory(data.room, queryHistory);
     console.log("History for Room : " + data.room + " History: " + history[data.room]);
-    socket.emit('receive history', {
-      history: history[data.room], room: data.room
-    });
+    // socket.emit('receive history', {
+    //   history: history[data.room], room: data.room
+    // });
   });
 
   // when the client emits 'typing', we broadcast it to others
@@ -276,4 +256,27 @@ io.on('connection', function (socket) {
     // Have the socket leave the room
     socket.leave(room);
   }
+
+function getHistory(roomID, callback) {
+  console.log("RoomID get history: " + roomID);
+  redisClient.lrange(roomID, 0, -1, function (err, reply) {
+    callback(err, reply, roomID);
+  });
+}
+
+function queryHistory(err, reply, roomID) {
+  history[roomID] = reply;
+    socket.emit('receive history', {
+    history: history[roomID], room: roomID
+  });
+}
+
+function addHistory(data, username) {
+  var input = username + ":" + data.message;
+  var response = redisClient.rpush(data.room, input, redis.print);
+  console.log("RoomID addHistory: " + data.room);
+  getHistory(data.room, queryHistory);
+  console.log("History on DB for room : " + data.room + " Data: " + history[data.room]);
+}
+
 });
