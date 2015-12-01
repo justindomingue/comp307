@@ -24,10 +24,10 @@ the chatroom.
 - [ ] Private messages
 - [x] Unique usernames
 - [ ] Send audio messages
-- [ ] People joining see past 10 messages (chat history)
+- [x] People joining see past 10 messages (chat history)
 - [x] Chat bot
-- [ ] Encryption
-- [ ] Map
+- [x] Encryption
+- [x] Map
 
 
 **************************** REDIS ************************
