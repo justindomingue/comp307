@@ -45,7 +45,7 @@ $(function () {
   function getMessages(roomID) {
     return $(roomID).find('.messages');
   }
-  
+
   function getTypingMessagesSelector(roomID) {
     return $(roomID).find('.typing.messages');
   }
@@ -71,7 +71,7 @@ $(function () {
     $(name).remove();
     $('.tabs ul.horizontal li a[href='+name+']')[0].remove();
   }
-  
+
   function switchTabToNearestNeighbor(roomIndex) {
     var roomID;
     if (usersRooms.length > roomIndex + 1) {
@@ -84,7 +84,7 @@ $(function () {
   	  $('.tabs').trigger('show', roomID);
   	}
   }
-  
+
   $('.after_event').tabslet();
   $('.after_event').on("_after", function() {
     // Remove notifications for the tab
@@ -132,13 +132,13 @@ $(function () {
 
     socket.emit('user joined', data);
   }
-  
+
   // Emits a leave room request to the server
   function sendLeaveRequest(name) {
     var data = {
       room: name
     }
-    
+
     socket.emit('user left', data);
   }
 
@@ -186,8 +186,8 @@ $(function () {
     if (message) {
       $inputMessage.val('');
 
-      joinRegex = /^\/join ([\w|\s]*)/.exec(message)
-      leaveRegex = /^\/leave ([\w|\s]*)/.exec(message)
+      joinRegex = /^:join ([\w|\s]*)/.exec(message)
+      leaveRegex = /^:leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
         // Check if the user is already a member of the room
         var roomIndex = usersRooms.indexOf('#'+joinRegex[1]);
@@ -414,12 +414,12 @@ $(function () {
     $chatPage.show();
     $loginPage.off('click');
     $currentInput = $inputMessage.focus();
-    
+
     refreshMap();
     getLocation(function(position) {
       socket.emit('my location', {username:data.username, lat: position.coords.latitude, lng: position.coords.longitude});
     });
-    
+
     username = data.username;
     connected = true;
     // Display the welcome message
@@ -465,10 +465,10 @@ $(function () {
   // Whenever the server emits 'user left', log it in the chat body
   socket.on('user left', function (data) {
     log(data.username + ' left', data.room);
-        
+
     // for map
     clearMarker(data.username);
-    
+
     addParticipantsMessage(data);
     removeChatTyping(data);
   });

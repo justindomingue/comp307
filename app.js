@@ -131,7 +131,7 @@ io.on('connection', function (socket) {
 
 
     // check message was for bot
-    if (message.match(/^chatbot/i)) {
+    if (message.match(/^:/)) {
       Bot.answer(message, { users: Object.keys(usernames), numUsers: numUsers }, function (answer) {
         console.log("Chatbot replying.");
         socket.to(data.room).emit('chatbot message', {
