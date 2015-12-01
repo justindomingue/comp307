@@ -98,10 +98,9 @@ io.on('connection', function (socket) {
   // when the client emits 'new message', this listens and executes
   socket.on('new message', function (data) {
     var message = data.message;
+    var isChatbot = false;
 
     // we tell the client to execute 'new message'
-    ///also add to history
-    addHistory(data, socket.username);
     console.log(socket.username + " sent a message to " + data.room);
     socket.to(data.room).emit('new message', {
       username: socket.username,
@@ -112,6 +111,7 @@ io.on('connection', function (socket) {
 
     // check message was for bot
     if (message.match(/^:/)) {
+      isChatbot = true;
       Bot.answer(message, { users: Object.keys(usernames), numUsers: numUsers }, function (answer) {
         console.log("Chatbot replying.");
         socket.to(data.room).emit('chatbot message', {
@@ -127,6 +127,10 @@ io.on('connection', function (socket) {
           options: { type: answer.type }
         });
       });
+    }
+    if (!isChatbot) {
+          ///also add to history
+          addHistory(data, socket.username);
     }
   });
 
