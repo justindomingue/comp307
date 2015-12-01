@@ -430,7 +430,6 @@ $(function () {
 
     newUserMessage(data);
     socket.emit('user joined', {username: username, room: activeID()});
-    socket.emit('get history', {room: activeID()});
   });
 
   // This runs if the requested username already exists

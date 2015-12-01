@@ -159,6 +159,9 @@ io.on('connection', function (socket) {
       username: socket.username,
       numUsers: rooms[data.room].numUsers
     });
+    //get history
+    getHistory(data.room, queryHistory);
+
     socket.to(data.room).emit('user joined', {
       room: data.room,
       username: socket.username,
@@ -180,9 +183,6 @@ io.on('connection', function (socket) {
   socket.on('get history', function (data) {
     getHistory(data.room, queryHistory);
     console.log("History for Room : " + data.room + " History: " + history[data.room]);
-    // socket.emit('receive history', {
-    //   history: history[data.room], room: data.room
-    // });
   });
 
   // when the client emits 'typing', we broadcast it to others
@@ -272,11 +272,9 @@ function queryHistory(err, reply, roomID) {
 }
 
 function addHistory(data, username) {
+  if (data.message == null) return;
   var input = username + ":" + data.message;
   var response = redisClient.rpush(data.room, input, redis.print);
   console.log("RoomID addHistory: " + data.room);
-  getHistory(data.room, queryHistory);
-  console.log("History on DB for room : " + data.room + " Data: " + history[data.room]);
 }
-
 });
