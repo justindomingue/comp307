@@ -2,8 +2,8 @@ var client = require('google-images');
 
 //patterns
 var patterns = [
-  /find (?:\w+ ?)*(?:picture|image) (?:of)? ((?:\w+ ?)+)/i,
-  /who('s| is) online/i
+  /^:picture (.*)$/,
+  /^:online/,
   ];
 
 function Bot() {
@@ -16,7 +16,7 @@ function Bot() {
         });
         break;
       case 1:
-        callback({message: 'Online: ' + extras.users.toString(), type: 'text'});
+        callback({message: extras.users.toString(), type: 'text'});
       default:
         break;
     }

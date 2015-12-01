@@ -48,26 +48,28 @@ $(function () {
 
   // TABS
 
-  function addTab(name) {
+  function addTab(escaped) {
+    var name = escaped.replace(/_/g," ");
+    //
     // 1. Add to tab list
-    var $li = $('<li><a href="#' + name + '">' + name + '</a></li>');
+    var $li = $('<li><a href="#' + escaped + '">' + name + '</a></li>');
     $('.tabs ul.horizontal').append($li);
 
     // 2. Add page
-    var $div = $('<div class="tab" id="' + name + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
+    var $div = $('<div class="tab" id="' + escaped + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
     $('.tabs').append($div);
 
     $('.tabs').trigger('destroy');
     $('.tabs').tabslet();
-    $('.tabs').trigger('show', '#'+name);
+    $('.tabs').trigger('show', '#'+escaped);
   }
 
   function removeTab(name) {
     // Delete tab content
     $(name).remove();
-    $('.tabs ul.horizontal li a[href='+name+']')[0].remove();
+    $('.tabs ul.horizontal li a[href="'+name+'"]')[0].remove();
   }
-  
+
   function switchTabToNearestNeighbor(roomIndex) {
     var roomID;
     if (usersRooms.length > roomIndex + 1) {
@@ -80,7 +82,7 @@ $(function () {
   	  $('.tabs').trigger('show', roomID);
   	}
   }
-  
+
   $('.after_event').tabslet();
   $('.after_event').on("_after", function() {
     // Remove notifications for the tab
@@ -100,14 +102,14 @@ $(function () {
   // else, set the text to data.count
   function updateNotification(data) {
     group = data.room;
-    $tab = $('.tabs li a[href='+group+'] span');
+    $tab = $('.tabs li a[href="'+group+'"] span');
     if (data.count === 0) {
       $tab.remove();
       $title.html(defaultTitle);  // Reset the webpage's title to the default
     } else {
       if ($tab[0] === undefined) {
-        $('.tabs li a[href='+group+']').append('<span class="badge"></span>');
-        $tab = $('.tabs li a[href='+group+'] span');
+        $('.tabs li a[href="'+group+'"]').append('<span class="badge"></span>');
+        $tab = $('.tabs li a[href="'+group+'"] span');
       }
       $tab.text(data.count);
       $title.html("Message in " + group.substr(1) + " (" + data.count +")");
@@ -128,13 +130,13 @@ $(function () {
 
     socket.emit('user joined', data);
   }
-  
+
   // Emits a leave room request to the server
   function sendLeaveRequest(name) {
     var data = {
       room: name
     }
-    
+
     socket.emit('user left', data);
   }
 
@@ -182,42 +184,46 @@ $(function () {
     if (message) {
       $inputMessage.val('');
 
-      joinRegex = /^\/join ([\w|\s]*)/.exec(message)
-      leaveRegex = /^\/leave ([\w|\s]*)/.exec(message)
+      joinRegex = /^:join ([\w|\s]*)/.exec(message)
+      leaveRegex = /^:leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
+        var name = joinRegex[1].replace(/ /g,"_");
+
         // Check if the user is already a member of the room
-        var roomIndex = usersRooms.indexOf('#'+joinRegex[1]);
+        var roomIndex = usersRooms.indexOf('#'+name);
         if (roomIndex >= 0) {
           // Switch to tab of room they entered
-          $('.tabs').trigger('show', '#'+joinRegex[1]);
+          $('.tabs').trigger('show', '#'+name);
         } else {
           $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
-          addTab(joinRegex[1]);
-          usersRooms.push('#'+joinRegex[1]);
-          unreadMessages['#'+joinRegex[1]] = 0;
+          addTab(name);
+          usersRooms.push('#'+name);
+          unreadMessages['#'+name] = 0;
           // Make a request to join the room
-    	  sendJoinRequest('#'+joinRegex[1]);
+    	  sendJoinRequest('#'+name);
     	  //$('.tabs').trigger('next');
         }
       } else if (leaveRegex) {
+        var name = leaveRegex[1].replace(/ /g,"_");
+
         // Check if the user is requesting to leave a room they are a member of
-        var roomIndex = usersRooms.indexOf('#'+leaveRegex[1]);
+        var roomIndex = usersRooms.indexOf('#'+name);
         if (roomIndex >= 0) {
           // If the user left the currently active room, and it wasn't the last room they were in,
           // switch them to a neighboring room
-          if ('#'+leaveRegex[1] === activeID() && usersRooms.length > 1) {
+          if ('#'+name === activeID() && usersRooms.length > 1) {
             switchTabToNearestNeighbor(roomIndex);
           }
-          removeTab('#'+leaveRegex[1]);
+          removeTab('#'+name);
           usersRooms.splice(roomIndex, 1);
-          delete unreadMessages['#'+leaveRegex[1]];
+          delete unreadMessages['#'+name];
           // If the user is no longer in any rooms, tell them
           if (usersRooms.length === 0) {
             $('#no-chats').append('<h2>You have left all rooms :(</h2>');
             $('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
           }
           // Notify the server that the user has left
-          sendLeaveRequest('#'+leaveRegex[1]);
+          sendLeaveRequest('#'+name);
         }
       } else if (connected) {
         addChatMessage({
@@ -288,6 +294,8 @@ $(function () {
   // options.prepend - If the element should prepend
   //   all other messages (default = false)
   function addMessageElement (el, roomID, options) {
+    console.log(el);
+
     var $el = $(el);
 
     // Setup default options
@@ -411,6 +419,11 @@ $(function () {
     $loginPage.off('click');
     $currentInput = $inputMessage.focus();
 
+    refreshMap();
+    getLocation(function(position) {
+      socket.emit('my location', {username:data.username, lat: position.coords.latitude, lng: position.coords.longitude});
+    });
+
     username = data.username;
     connected = true;
     // Display the welcome message
@@ -421,7 +434,6 @@ $(function () {
 
     newUserMessage(data);
     socket.emit('user joined', {username: username, room: activeID()});
-    socket.emit('get history', {room: activeID()});
   });
 
   // This runs if the requested username already exists
@@ -456,6 +468,10 @@ $(function () {
   // Whenever the server emits 'user left', log it in the chat body
   socket.on('user left', function (data) {
     log(data.username + ' left', data.room);
+
+    // for map
+    clearMarker(data.username);
+
     addParticipantsMessage(data);
     removeChatTyping(data);
   });
@@ -475,4 +491,8 @@ $(function () {
     addHistory(data.history, data.room);
   });
 
+  socket.on('receive location', function(data) {
+    console.log("New location for " + data.username + " : " + data.lat + " " + data.lng);
+    addMarker(data.username, data.lat, data.lng);
+  });
 });
