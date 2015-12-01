@@ -52,18 +52,20 @@ $(function () {
 
   // TABS
 
-  function addTab(name) {
+  function addTab(escaped) {
+    var name = escaped.replace(/_/g," ");
+    //
     // 1. Add to tab list
-    var $li = $('<li><a href="#' + name + '">' + name + '</a></li>');
+    var $li = $('<li><a href="#' + escaped + '">' + name + '</a></li>');
     $('.tabs ul.horizontal').append($li);
 
     // 2. Add page
-    var $div = $('<div class="tab" id="' + name + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
+    var $div = $('<div class="tab" id="' + escaped + '"><div class="chatArea"><ul class="messages"></ul></div></div>');
     $('.tabs').append($div);
 
     $('.tabs').trigger('destroy');
     $('.tabs').tabslet();
-    $('.tabs').trigger('show', '#'+name);
+    $('.tabs').trigger('show', '#'+escaped);
   }
 
   function removeTab(name) {
@@ -189,39 +191,43 @@ $(function () {
       joinRegex = /^:join ([\w|\s]*)/.exec(message)
       leaveRegex = /^:leave ([\w|\s]*)/.exec(message)
       if (joinRegex) {
+        var name = joinRegex[1].replace(/ /g,"_");
+
         // Check if the user is already a member of the room
-        var roomIndex = usersRooms.indexOf('#'+joinRegex[1]);
+        var roomIndex = usersRooms.indexOf('#'+name);
         if (roomIndex >= 0) {
           // Switch to tab of room they entered
-          $('.tabs').trigger('show', '#'+joinRegex[1]);
+          $('.tabs').trigger('show', '#'+name);
         } else {
           $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
-          addTab(joinRegex[1]);
-          usersRooms.push('#'+joinRegex[1]);
-          unreadMessages['#'+joinRegex[1]] = 0;
+          addTab(name);
+          usersRooms.push('#'+name);
+          unreadMessages['#'+name] = 0;
           // Make a request to join the room
-    	  sendJoinRequest('#'+joinRegex[1]);
+    	  sendJoinRequest('#'+name);
     	  //$('.tabs').trigger('next');
         }
       } else if (leaveRegex) {
+        var name = leaveRegex[1].replace(/ /g,"_");
+
         // Check if the user is requesting to leave a room they are a member of
-        var roomIndex = usersRooms.indexOf('#'+leaveRegex[1]);
+        var roomIndex = usersRooms.indexOf('#'+name);
         if (roomIndex >= 0) {
           // If the user left the currently active room, and it wasn't the last room they were in,
           // switch them to a neighboring room
-          if ('#'+leaveRegex[1] === activeID() && usersRooms.length > 1) {
+          if ('#'+name === activeID() && usersRooms.length > 1) {
             switchTabToNearestNeighbor(roomIndex);
           }
-          removeTab('#'+leaveRegex[1]);
+          removeTab('#'+name);
           usersRooms.splice(roomIndex, 1);
-          delete unreadMessages['#'+leaveRegex[1]];
+          delete unreadMessages['#'+name];
           // If the user is no longer in any rooms, tell them
           if (usersRooms.length === 0) {
             $('#no-chats').append('<h2>You have left all rooms :(</h2>');
             $('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
           }
           // Notify the server that the user has left
-          sendLeaveRequest('#'+leaveRegex[1]);
+          sendLeaveRequest('#'+name);
         }
       } else if (connected) {
         addChatMessage({
