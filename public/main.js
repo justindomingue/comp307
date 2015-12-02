@@ -262,6 +262,10 @@ $(function () {
       body = '<img class="chatbot-img" src="' + data.message + '">';
     }
 
+    // find and format urls
+    var urlRegex = /https?:\/\/[^\s]*/gi;
+    body = body.replace(urlRegex, "<a href='$&'>$&</a>");
+
     var $usernameDiv = $('<span class="username"/>')
       .text(data.username)
       .css('color', getUsernameColor(data.username));
