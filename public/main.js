@@ -260,11 +260,11 @@ $(function () {
     var body = data.message;
     if (options.type === 'img') {
       body = '<img class="chatbot-img" src="' + data.message + '">';
+    } else {
+      // find and format urls
+      var urlRegex = /https?:\/\/[^\s]*/gi;
+      body = body.replace(urlRegex, "<a href='$&'>$&</a>");
     }
-
-    // find and format urls
-    var urlRegex = /https?:\/\/[^\s]*/gi;
-    body = body.replace(urlRegex, "<a href='$&'>$&</a>");
 
     var $usernameDiv = $('<span class="username"/>')
       .text(data.username)

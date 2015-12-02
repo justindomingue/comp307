@@ -1,4 +1,4 @@
-var client = require('google-images');
+var client = require('node-bing-api')({accKey: 'wsl7vVXADKxJj5qdnLizMzR7Ck5VlLVkKhMjL4APQeA='});
 
 //patterns
 var patterns = [
@@ -10,9 +10,11 @@ function Bot() {
   this.handle_request = function(type, data, extras, callback) {
     switch (type) {
       case 0:
-        client.search(data, function(err, images) {
-          image = images[0];
-          callback({message: image.url, type: 'img'});
+        client.images(data,  {top: 1, imageFilters: { size: 'medium' }}, function(err, res, body) {
+          console.log(body);
+          image = body['d']['results'][0]
+            console.log(image);
+          callback({message: image.MediaUrl, type: 'img'});
         });
         break;
       case 1:

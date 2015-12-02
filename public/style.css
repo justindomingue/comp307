@@ -134,7 +134,8 @@ ul {
 }
 
 .message .messageBody img {
-  width: 300px;
+  max-width: 300px;
+  max-height: 300px;
 }
 
 .username {
