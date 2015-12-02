@@ -13,7 +13,7 @@
  *  text: text to show
  *  color: color of the toast. one of red, green, blue, orange, yellow or custom
 */
-function ohSnap(text, color, icon) {
+function ohSnap(text, color, clickToRemove, icon) {
     var icon_markup = "",
         html,
         time = '5000',
@@ -35,9 +35,11 @@ function ohSnap(text, color, icon) {
     });
 
     // After 'time' seconds, the animation fades out
-    setTimeout(function() {
-        ohSnapX(html);
-    }, time);
+    if (!clickToRemove) {
+		setTimeout(function() {
+			ohSnapX(html);
+		}, time);
+	}
 }
 
 function ohSnapX(element) {
