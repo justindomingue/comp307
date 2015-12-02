@@ -1,3 +1,7 @@
+// TODO: treat individual rooms just like group rooms
+// Modify 'validate private' such that both sockets subscribe to room
+// return to HERE in main.js
+
 // Setup basic express server
 var express = require('express');
 var redis = require('redis');
@@ -25,30 +29,48 @@ var Bot = require('./bot');
 
 // Chatroom
 
+var ChatTypeEnum = {
+  group: "group",
+  individual: "individual"
+};
+
 // Initialize our dictionary of rooms with the global room "public"
 // Key = name of room
-// Value = object containing usernames and number of participants
+// Value = object containing the type of the room, usernames, and number of participants
 var rooms = {};
-var publicRoom = new Room();
+var publicRoom = new Room(ChatTypeEnum.group);
 rooms['#public'] = publicRoom;
 
 // Initialize an array of private chats
 // Values = arrays of the two participants, e.g. ['bob', 'alice']
 var privateChats = [];
+var sockets = {};
 
 // Dictionary of users currently online
 // Key: username
-// Value: a dictionary of rooms the user is in
+// Value: a dictionary with id = socket id of user, rooms = names of rooms the user is in
 // As an example, here is what usernames might look like:
 /*
 var usernames = {
     keith: {
-        room1: "room1",
-        room2: "room2",
-        room3: "room3"
+    	id: socket.id,
+    	rooms: {
+        	room1: "room1",
+        	room2: "room2",
+        	room3: "room3"
+        },
+        privateChats: {
+        	jane: "jane"
+        }
     },
     jane: {
-        room1: "room1"
+        id: socket.id,
+    	rooms: {
+        	room1: "room1",
+        },
+        privateChats: {
+        	keith: "keith"
+        }
     }
 }
 */
@@ -56,13 +78,13 @@ var usernames = {};
 var locations = {};
 var numUsers = 0;
 
-var ChatTypeEnum = {
-  group: "group",
-  individual: "individual"
-}
-
-function Room() {
-  this.numUsers = 0;
+function Room(type) {
+  this.type = type;
+  if (type === ChatTypeEnum.individual) {
+    this.numUsers = 2;
+  } else {
+    this.numUsers = 0;
+  }
   this.usernames = {};
 }
 
@@ -88,7 +110,11 @@ io.on('connection', function (socket) {
     } else {
       console.log(data + " logged in");
       socket.username = data;
-      usernames[data] = {};
+      sockets[socket.id] = socket;
+      usernames[data] = {
+        id: socket.id,
+        rooms: {}
+      };
       numUsers++;
       addedUser = true;
       socket.emit('valid username', {
@@ -102,12 +128,16 @@ io.on('connection', function (socket) {
   socket.on('new message', function (data) {
     var message = data.message;
     var isChatbot = false;
-
-    // we tell the client to execute 'new message'
+    var clientSideRoomName = data.room;
     console.log(socket.username + " sent a message to " + data.room);
+    // We need to change the name of data.room if it is for an individual chat
+    if (rooms[data.room].type === ChatTypeEnum.individual) {
+      clientSideRoomName = "#"+socket.username;
+    }
+    // we tell the client to execute 'new message'
     socket.to(data.room).emit('new message', {
       username: socket.username,
-      room: data.room,
+      room: clientSideRoomName,
       message: message
     });
 
@@ -118,13 +148,13 @@ io.on('connection', function (socket) {
         console.log("Chatbot replying.");
         socket.to(data.room).emit('chatbot message', {
           username: 'chatbot',
-          room: data.room,
+          room: clientSideRoomName,
           message: answer.message,
           options: { type: answer.type }
         });
         socket.emit('chatbot message', {
           username: 'chatbot',
-          room: data.room,
+          room: clientSideRoomName,
           message: answer.message,
           options: { type: answer.type }
         });
@@ -136,48 +166,73 @@ io.on('connection', function (socket) {
     }
   });
 
+  // Data contains: room: name, username: username
   socket.on('user joined', function (data) {
     console.log(data.username + " joined " + data.room);
+	// Check if the room already exists
+	if (!(data.room in rooms)) {
+	  // Add a new room to the dictionary of rooms
+	  rooms[data.room] = new Room(ChatTypeEnum.group);
+	}
 
-    // Check the type of the room: group or individual
-    if (data.chatType === ChatTypeEnum.group) {
-        // Check if the room already exists
-		if (!(data.room in rooms)) {
-		  // Add a new room to the dictionary of rooms
-		  rooms[data.room] = new Room();
-		}
+	// Subscribe the socket to the room
+	socket.join(data.room);
 
-		// Subscribe the socket to the room
-		socket.join(data.room);
+	// Add the room to the list of rooms the user is a part of
+	usernames[data.username].rooms[data.room] = data.room;
 
-		// Add the room to the list of rooms the user is a part of
-		usernames[data.username][data.room] = data.room;
+	// add the client's username to the list of participants in the given room
+	rooms[data.room].usernames[data.username] = data.username;
+	// increment the number of users in the room by one
+	rooms[data.room].numUsers++;
 
-		// add the client's username to the list of participants in the given room
-		rooms[data.room].usernames[data.username] = data.username;
-		// increment the number of users in the room by one
-		rooms[data.room].numUsers++;
+	// echo to all members of the chat that a person has connected
+	socket.emit('user joined', {
+	  room: data.room,
+	  username: socket.username,
+	  numUsers: rooms[data.room].numUsers
+	});
+	//get history
+	getHistory(data.room, queryHistory);
 
-		// echo to all members of the chat that a person has connected
-		socket.emit('user joined', {
-		  room: data.room,
-		  username: socket.username,
-		  numUsers: rooms[data.room].numUsers
-		});
-		//get history
-		getHistory(data.room, queryHistory);
-
-		socket.to(data.room).emit('user joined', {
-		  room: data.room,
-		  username: socket.username,
-		  numUsers: rooms[data.room].numUsers
-		});
-    } else {
-      // HERE! Do stuff for individual chat
-    
-    }
+	socket.to(data.room).emit('user joined', {
+	  room: data.room,
+	  username: socket.username,
+	  numUsers: rooms[data.room].numUsers
+	});
     
   });
+  
+  socket.on('validate and create individual chat', function(data) {
+    if (!(data.other in usernames)) {
+      socket.emit('other user not online', data.other);
+    } else {
+      console.log(data.creator + " created private chat with " + data.other);
+      // Create the name for the individual chat
+      var name = generatePrivateChatName(data);
+      console.log("The name of the private chat is " + name);
+      rooms[name] = new Room(ChatTypeEnum.individual);
+      rooms[name].usernames["creator"] = data.creator;
+      rooms[name].usernames["other"] = data.other;
+      
+      // Subscribe both members to the chat
+      socket.join(name);
+      sockets[usernames[data.other].id].join(name);
+      // Emit to both members that they've successfully created a private chat
+      socket.emit('added to private chat', data);
+      socket.to(name).emit('added to private chat', data);
+    
+      // Emit to 'other' that they've been added to a private chat
+      //socket.to(usernames[data.other].id).emit('added to private chat', data);
+    }
+  });
+  
+  function generatePrivateChatName(data) {
+    var names = [data.creator, data.other];
+    names.sort();
+    var name = "#"+names[0]+"#"+names[1];
+    return name;
+  }
 
   socket.on('my location', function (data) {
     var usr = data.username,
@@ -220,7 +275,7 @@ io.on('connection', function (socket) {
     if (addedUser) {
       // Get the dictionary of rooms the user was a part of
 
-      var usersRooms = usernames[socket.username];
+      var usersRooms = usernames[socket.username].rooms;
       // Iterate through the rooms, removing the user from each one, and echoing to other
       // members of each room that the user has left
       for (var room in usersRooms) {
@@ -242,7 +297,7 @@ io.on('connection', function (socket) {
 
       removeUserFromRoom(data.room);
       console.log(socket.username + " left " + data.room);
-      delete usernames[socket.username][data.room];
+      delete usernames[socket.username].rooms[data.room];
       // setUsernames(usernames);
     }
   });

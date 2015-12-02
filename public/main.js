@@ -23,7 +23,8 @@ $(function () {
   // Prompt for setting a username
   var username;
   var usersRooms = ['#public'];
-  var privateChats = [];
+  //var privateChats = [];
+  var privateRoomIds = {};
   var connected = false;
   var typing = false;
   var lastTypingTime;
@@ -41,6 +42,11 @@ $(function () {
   function activeID() {
     return $('.tabs li.active a').attr('href');
   }
+  
+  // Returns the type of the active chat
+  function activeChatType() {
+    return $('.tabs li.active a').attr('class');
+  }
 
   // Returns the active tab
   function active() {
@@ -55,11 +61,11 @@ $(function () {
 
   // TABS
 
-  function addTab(escaped) {
+  function addTab(escaped, chatType) {
     var name = escaped.replace(/_/g," ");
     //
     // 1. Add to tab list
-    var $li = $('<li><a href="#' + escaped + '">' + name + '</a></li>');
+    var $li = $('<li><a class="'+chatType+'" href="#' + escaped + '">' + name + '</a></li>');
     $('.tabs ul.horizontal').append($li);
 
     // 2. Add page
@@ -129,15 +135,23 @@ $(function () {
   }
 
   // Emits a room join request to the server
-  function sendJoinRequest(name, chatType) {
+  function sendJoinRequest(name) {
     var data = {
       room: name,
-      username: username,
-      chatType: chatType
-    }
+      username: username
+    };
 
     socket.emit('user joined', data);
   }
+  
+  /*function sendPrivateChatJoinRequest(name) {
+    var data = {
+      creator: username,
+      other: name
+    };
+    
+    socket.emit('private chat', data);
+  }*/
 
   // Emits a leave room request to the server
   function sendLeaveRequest(name) {
@@ -199,26 +213,8 @@ $(function () {
         handleJoin(name, ChatTypeEnum.group);
       } else if (leaveRegex) {
         var name = leaveRegex[1].replace(/ /g,"_");
-
-        // Check if the user is requesting to leave a room they are a member of
-        var roomIndex = usersRooms.indexOf('#'+name);
-        if (roomIndex >= 0) {
-          // If the user left the currently active room, and it wasn't the last room they were in,
-          // switch them to a neighboring room
-          if ('#'+name === activeID() && usersRooms.length > 1) {
-            switchTabToNearestNeighbor(roomIndex);
-          }
-          removeTab('#'+name);
-          usersRooms.splice(roomIndex, 1);
-          delete unreadMessages['#'+name];
-          // If the user is no longer in any rooms, tell them
-          if (usersRooms.length === 0) {
-            $('#no-chats').append('<h2>You have left all rooms :(</h2>');
-            $('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
-          }
-          // Notify the server that the user has left
-          sendLeaveRequest('#'+name);
-        }
+        var chatType = activeChatType();
+		handleLeave(name, chatType);
       } else if (connected) {
         addChatMessage({
           username: username,
@@ -226,9 +222,57 @@ $(function () {
           message: message
         });
         // tell server to execute 'new message' and send along the message and the room
-        socket.emit('new message', {message: message, room: activeID()});
+        // Determine if the message was sent in a private or public room
+        var chatType = activeChatType();
+        var room;
+        if (chatType === ChatTypeEnum.group) {
+          room = activeID();
+        } else {
+          // We have to recreate the name of the room
+          room = deduceName();
+        }
+        socket.emit('new message', {message: message, room: room});
       }
     }
+  }
+  
+  // Determine the name of the private chat (as maintained by the server)
+  function deduceName() {
+    var roomName;
+    var otherName = activeID().substring(1);
+	var names = [username, otherName];
+	names.sort();
+	roomName = "#"+names[0]+"#"+names[1];    
+    return roomName;
+  }
+  
+  // TODO implement leaving a room
+  
+  function handleLeave(name, chatType) {
+    // Check if the user is requesting to leave a room they are a member of
+	var roomIndex = usersRooms.indexOf('#'+name);
+
+	if (roomIndex >= 0) {
+	  // If the user left the currently active room, and it wasn't the last room they were in,
+	  // switch them to a neighboring room
+	  if ('#'+name === activeID() && usersRooms.length > 1) {
+		switchTabToNearestNeighbor(roomIndex);
+	  }
+	  removeTab('#'+name);
+	  usersRooms.splice(roomIndex, 1);
+	  delete unreadMessages['#'+name];
+	  // If the user is no longer in any rooms, tell them
+	  if (usersRooms.length === 0) {
+		$('#no-chats').append('<h2>You have left all rooms :(</h2>');
+		$('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
+	  }
+	  // Notify the server that the user has left
+	  if (chatType === ChatTypeEnum.group) {
+	    sendLeaveRequest('#'+name);
+	  } else {
+	    sendPrivateChatLeaveRequest(name);
+	  }
+	}
   }
   
   function handleJoin(name, chatType) {
@@ -237,7 +281,7 @@ $(function () {
     if (chatType === ChatTypeEnum.group) {
       roomIndex = usersRooms.indexOf('#'+name);
     } else {
-      roomIndex = privateChats.indexOf('#'+name);
+      roomIndex = usersRooms.indexOf(name);
     }
     
 	if (roomIndex >= 0) {
@@ -245,17 +289,17 @@ $(function () {
 	  $('.tabs').trigger('show', '#'+name);
 	} else {
 	  $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
-	  addTab(name);
+	  addTab(name, chatType);
 	  if (chatType === ChatTypeEnum.group) {
 	    usersRooms.push('#'+name);
 	    unreadMessages['#'+name] = 0;
+	    // Make a request to join the chat
+	    sendJoinRequest('#'+name);
 	  } else {
-	    privateChats.push('#'+name);
-	    unreadMessages['#'+name] = 0;
+	    usersRooms.push(name);
+	    unreadMessages[name] = 0;
+	    sendPrivateChatJoinRequest(name); 
 	  }
-	  
-	  // Make a request to join the chat
-	  sendJoinRequest('#'+name, chatType);
 	}
   }
 
@@ -435,7 +479,19 @@ $(function () {
   $(document).on('click', '.username', function() {
     //getMessages(activeID()).append($(this).html());
     var name = $(this).html();
-    handleJoin(name, ChatTypeEnum.individual);
+    var roomIndex = usersRooms.indexOf('#'+name);
+    if (roomIndex >= 0) {
+	  // Switch to tab of room they entered
+	  $('.tabs').trigger('show', '#'+name);
+	} else {
+	  if (name != username) {
+        var data = {
+          creator: username,
+          other: name
+        }
+        socket.emit('validate and create individual chat', data);
+      }
+	}
   });
 
   // Socket events
@@ -461,7 +517,7 @@ $(function () {
     });
 
     newUserMessage(data);
-    sendJoinRequest(activeID(), ChatTypeEnum.group);
+    sendJoinRequest(activeID());
     //socket.emit('user joined', {username: username, room: activeID()});
   });
 
@@ -523,5 +579,27 @@ $(function () {
   socket.on('receive location', function(data) {
     console.log("New location for " + data.username + " : " + data.lat + " " + data.lng);
     addMarker(data.username, data.lat, data.lng);
+  });
+  
+  // data is a string with value = the username of the other member of the private chat
+  socket.on('added to private chat', function(data) {
+    $('#no-chats').empty();  // Ensure that $('#no-chats') is empty
+    var name;
+    var message;
+    if (data.creator === username) {
+      name = data.other;
+      message = "You've created a private chat with " + name;
+    } else {
+      name = data.creator;
+      message = name + " started a private chat with you";
+    }
+	addTab(name, ChatTypeEnum.individual);
+	log(message, '#'+name);
+	usersRooms.push('#'+name);
+	unreadMessages['#'+name] = 0;
+  });
+  
+  socket.on('other user not online', function(data) {
+    ohSnap(data + ' is no longer online', 'blue');
   });
 });
