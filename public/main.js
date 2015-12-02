@@ -609,6 +609,6 @@ $(function () {
   });
   
   socket.on('other user not online', function(data) {
-    ohSnap(data + ' is no longer online', 'blue');
+    ohSnap(data + ' is no longer online', 'red');
   });
 });
