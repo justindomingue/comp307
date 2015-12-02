@@ -265,7 +265,7 @@ $(function () {
 	  // If the user is no longer in any rooms, tell them
 	  if (usersRooms.length === 0) {
 		$('#no-chats').append('<h2>You have left all rooms :(</h2>');
-		$('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
+		$('#no-chats').append("<h2>Use ':join' to join or create a room!</h2>");
 	  }
 	  // Notify the server that the user has left
 	  sendLeaveRequest(room);
@@ -558,7 +558,7 @@ $(function () {
 	  // If the user is no longer in any rooms, tell them
 	  if (usersRooms.length === 0) {
 		$('#no-chats').append('<h2>You have left all rooms :(</h2>');
-		$('#no-chats').append("<h2>Use '/join' to join or create a room!</h2>");
+		$('#no-chats').append("<h2>Use ':join' to join or create a room!</h2>");
 	  }
 	  ohSnap(data.username + ' left the private chat', 'red', true);
     } else {
