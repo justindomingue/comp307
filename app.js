@@ -1,7 +1,3 @@
-// TODO: treat individual rooms just like group rooms
-// Modify 'validate private' such that both sockets subscribe to room
-// return to HERE in main.js
-
 // Setup basic express server
 var express = require('express');
 var redis = require('redis');
@@ -43,7 +39,6 @@ rooms['#public'] = publicRoom;
 
 // Initialize an array of private chats
 // Values = arrays of the two participants, e.g. ['bob', 'alice']
-var privateChats = [];
 var sockets = {};
 
 // Dictionary of users currently online
@@ -253,18 +248,26 @@ io.on('connection', function (socket) {
   // when the client emits 'typing', we broadcast it to others
   socket.on('typing', function (data) {
     //console.log(socket.username + " typing to " + data.room);
+    var clientSideRoomName = data.room;
+    if (rooms[data.room].type === ChatTypeEnum.individual) {
+      clientSideRoomName = "#"+socket.username;
+    }
     socket.to(data.room).emit('typing', {
       username: socket.username,
-      room: data.room
+      room: clientSideRoomName
     });
   });
 
   // when the client emits 'stop typing', we broadcast it to others
   socket.on('stop typing', function (data) {
     //console.log(socket.username + " stopped typing to " + data.room);
+    var clientSideRoomName = data.room;
+    if (rooms[data.room].type === ChatTypeEnum.individual) {
+      clientSideRoomName = "#"+socket.username;
+    }
     socket.to(data.room).emit('stop typing', {
       username: socket.username,
-      room: data.room
+      room: clientSideRoomName
     });
   });
 
@@ -294,7 +297,6 @@ io.on('connection', function (socket) {
   // when the user closes an individual tab, disconnect them from that group
   socket.on('user left', function (data) {
     if (addedUser) {
-
       removeUserFromRoom(data.room);
       console.log(socket.username + " left " + data.room);
       delete usernames[socket.username].rooms[data.room];
@@ -305,16 +307,24 @@ io.on('connection', function (socket) {
   // Helper function which removes the user from the given room and notifies other participants
   // of the room that a user has left
   function removeUserFromRoom(room) {
+    console.log("The room is: " + room);
+    var roomType = rooms[room].type;
     delete rooms[room].usernames[socket.username];
     rooms[room].numUsers--;
     if (rooms[room].numUsers === 0) {
       // Remove the room entirely
       delete rooms[room];
     } else {
+      // If the room was a private room, we need to get its client-side name
+      var clientSideRoomName = room;
+      if (rooms[room].type === ChatTypeEnum.individual) {
+        clientSideRoomName = "#"+socket.username;
+      }
       // Emit to the remaining users that the user has left
       socket.to(room).emit('user left', {
         username: socket.username,
-        room: room,
+        room: clientSideRoomName,
+        roomType: roomType,
         numUsers: rooms[room].numUsers
       });
     }

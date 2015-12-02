@@ -196,18 +196,28 @@ ul {
 	text-decoration: none;
 }
 
-.tabs UL.horizontal LI:hover {
+.tabs UL.horizontal LI.group:hover {
 	background: #a0cac0;
 	border-bottom: 4px solid #68a697;
+}
+
+.tabs UL.horizontal LI.individual:hover {
+	background: #ebc1c7;
+	border-bottom: 4px solid #d17584;
 }
 
 .tabs UL.horizontal LI:hover A {
 	color: white;
 }
 
-.active {
+.active.group {
 	background: #a0cac0 !important;
 	border-bottom: 4px solid #68a697 !important;
+}
+
+.active.individual {
+    background: #ebc1c7 !important;
+	border-bottom: 4px solid #d17584 !important;
 }
 
 .active A {
