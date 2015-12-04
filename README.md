@@ -27,6 +27,7 @@ the chatroom.
 - [x] Chat bot
 - [x] Encryption
 - [x] Map
+- [x] Link formatting
 
 ## Using the app
 
@@ -35,6 +36,8 @@ the chatroom.
 - Leave a room you've created by typeing :leave roomName" into the text box
 - Ask the chatbot for pictures by typing ":picture" followed by what you would like a picture of
 - Ask the chatbot who's online by typing ":online"
+- Try coping and pasting a link into the text box sending it. You should be able to click on the link! Be careful
+to open it in another tab though
 
 **************************** REDIS ************************
 ## How to use REDIS:
