@@ -21,14 +21,20 @@ on website load.
 the chatroom.
 - [x] 'is typing' message
 - [x] Multiple rooms
-- [ ] Private messages
+- [x] Private messages
 - [x] Unique usernames
-- [ ] Send audio messages
-- [x] People joining see past 10 messages (chat history)
+- [x] People joining see past messages (chat history)
 - [x] Chat bot
 - [x] Encryption
 - [x] Map
 
+## Using the app
+
+- Start a private message by clicking on the username of a user you would like to chat with
+- Join/create a room by typing ":join roomName" into the text box
+- Leave a room you've created by typeing :leave roomName" into the text box
+- Ask the chatbot for pictures by typing ":picture" followed by what you would like a picture of
+- Ask the chatbot who's online by typing ":online"
 
 **************************** REDIS ************************
 ## How to use REDIS:
@@ -61,7 +67,7 @@ To change the conf, go to (from comp307 root)
 
 $vim node_modules/redis-stable/redis.conf
 
-* Then change port too desired port for redis server. Vim command : ?port *
+* Then change port to desired port for redis server. Vim command : ?port *
 
 
 
