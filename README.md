@@ -1,6 +1,7 @@
-## Harry Simmonds
-## Justin Domingue
-## Keith Strickling
+Authors:
+Harry Simmonds
+Justin Domingue
+Keith Strickling
 
 # COMP307
 
