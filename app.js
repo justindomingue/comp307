@@ -209,6 +209,8 @@ io.on('connection', function (socket) {
       rooms[name] = new Room(ChatTypeEnum.individual);
       rooms[name].usernames["creator"] = data.creator;
       rooms[name].usernames["other"] = data.other;
+      usernames[data.creator].rooms[name] = name;
+      usernames[data.other].rooms[name] = name;
       
       // Subscribe both members to the chat
       socket.join(name);
