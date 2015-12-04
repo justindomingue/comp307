@@ -216,9 +216,6 @@ io.on('connection', function (socket) {
       // Emit to both members that they've successfully created a private chat
       socket.emit('added to private chat', data);
       socket.to(name).emit('added to private chat', data);
-    
-      // Emit to 'other' that they've been added to a private chat
-      //socket.to(usernames[data.other].id).emit('added to private chat', data);
     }
   });
   

@@ -186,8 +186,16 @@ $(function () {
 
     // If the username is valid
     if (requestedUsername) {
-      // Tell the server your username
-      socket.emit('validate username', requestedUsername);
+      // Check that the username contains no spaces
+      if (requestedUsername.indexOf(' ') === -1) {
+        // Tell the server your username
+        socket.emit('validate username', requestedUsername);
+      } else {
+        // The username contained a space, which is not allowed
+        $loginMsg.text("Your username cannot contain any spaces. Please try another!");
+        $currentInput.val('');
+        $currentInput.focus();
+      }
     }
   }
 
@@ -513,7 +521,7 @@ $(function () {
     sendJoinRequest(activeID());
     //socket.emit('user joined', {username: username, room: activeID()});
   });
-
+  
   // This runs if the requested username already exists
   socket.on('invalid username', function (data) {
     $loginMsg.text("The username '" + data + "' is already taken. Please try another!");
