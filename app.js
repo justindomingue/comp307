@@ -6,8 +6,8 @@ var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 var port = process.env.PORT || 3000;
 
-// var redisClient = redis.createClient();
-var redisClient = redis.createClient(6379, 'comp307.redis.cache.windows.net', { auth_pass: 'F0v6DGIxpKGaw4tHS/qtId13rT4AU9D0a9YbnErRjf0=' });
+var redisClient = redis.createClient();
+// var redisClient = redis.createClient(6379, 'comp307.redis.cache.windows.net', { auth_pass: 'F0v6DGIxpKGaw4tHS/qtId13rT4AU9D0a9YbnErRjf0=' });
 var history =  {};
 
 redisClient.on("error", function (err) {
