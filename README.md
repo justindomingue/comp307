@@ -7,6 +7,12 @@ Keith Strickling
 
 ## How to use
 
+### Online
+
+Navigate to aristochat.azurewebsites.net for an online demo of the chat app. It is connected to a Redis cache hosted on Azure.
+
+### Locally
+
 ```
 cd comp307
 $ npm install
